@@ -875,3 +875,5 @@ src/main/resources/gcp-key.json.gradle/
 
                                # GCP Service Account Key
                                src/main/resources/gcp-key.json
+### 제출용 보안 증빙 자료 (콘솔 캡처, 레포 미포함)
+docs/security/

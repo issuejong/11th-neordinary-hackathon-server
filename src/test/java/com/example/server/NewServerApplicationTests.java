@@ -33,7 +33,7 @@ class NewServerApplicationTests {
 
   @Test
   void exampleCanBeCreatedAndRetrieved() throws Exception {
-    String location = mvc.perform(post("/api/v1/examples")
+    String location = mvc.perform(post("/api/examples")
             .contentType(MediaType.APPLICATION_JSON)
             .content("""
                 {"name": "첫 번째 항목"}
@@ -53,7 +53,7 @@ class NewServerApplicationTests {
 
   @Test
   void invalidAndMissingItemsUseTheCommonErrorFormat() throws Exception {
-    mvc.perform(post("/api/v1/examples")
+    mvc.perform(post("/api/examples")
             .contentType(MediaType.APPLICATION_JSON)
             .content("""
                 {"name": ""}
@@ -61,9 +61,9 @@ class NewServerApplicationTests {
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.isSuccess").value(false))
         .andExpect(jsonPath("$.code").value("COMMON400"))
-        .andExpect(jsonPath("$.result").doesNotHaveJsonPath());
+        .andExpect(jsonPath("$.result.name").isString());
 
-    mvc.perform(get("/api/v1/examples/0"))
+    mvc.perform(get("/api/examples/0"))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.isSuccess").value(false))
         .andExpect(jsonPath("$.code").value("COMMON404"));

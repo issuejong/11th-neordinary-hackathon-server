@@ -147,6 +147,7 @@
     <li><b>Public IP 없음</b> (외부 접근 불가)</li>
     <li>Private Service Access (VPC 피어링)</li>
     <li>앱 전용 계정 <span class="k">hackathon_app</span></li>
+    <li><b>이미지 업로드: LONGBLOB 저장</b></li>
   </ul>
 </div>
 <div class="badge" style="left:1488px; top:228px;">3</div>
@@ -159,7 +160,7 @@
 
 <div class="box sec" style="left:630px; top:530px; width:276px; height:150px;">
   <div class="t"><span class="ic" style="background:#f59e0b">SM</span>Secret Manager</div>
-  <div class="s">민감정보 저장소</div>
+  <div class="s">민감정보 저장소 (글로벌 · 자동 복제)</div>
   <ul>
     <li><span class="k">db-url</span> <span class="k">db-username</span> <span class="k">db-password</span></li>
     <li>런타임 SA에만 secretAccessor 부여</li>
@@ -171,12 +172,12 @@
 <div class="box" style="left:956px; top:530px; width:236px; height:136px; border-color:#6d28d9;">
   <div class="t"><span class="ic" style="background:#6d28d9">AR</span>Artifact Registry</div>
   <div class="s">Docker 이미지 저장소</div>
-  <ul><li>커밋 SHA 태그 이미지</li><li>배포 SA만 push 가능</li></ul>
+  <ul><li>커밋 SHA 태그 이미지</li><li>쓰기 권한은 배포 SA에만 부여</li></ul>
 </div>
 
 <div class="box" style="left:1230px; top:530px; width:270px; height:136px;">
   <div class="t"><span class="ic" style="background:#6b7280">LG</span>Cloud Logging</div>
-  <div class="s">애플리케이션 로그 · 모니터링</div>
+  <div class="s">애플리케이션 로그 (글로벌)</div>
   <ul><li>Cloud Run stdout 자동 수집</li><li>배포 이력 = 리비전 (즉시 롤백)</li></ul>
 </div>
 
@@ -192,9 +193,9 @@
 <div class="box" style="left:624px; top:790px; width:412px; height:116px;">
   <div class="t"><span class="ic" style="background:#2088ff">GA</span>GitHub Actions · Deploy</div>
   <ul>
-    <li>① Gradle 테스트 → ② Docker 빌드 (레이어 캐시)</li>
+    <li>① Gradle 테스트 (실패 시 배포 중단) → ② Docker 빌드</li>
     <li>③ Artifact Registry push → ④ Cloud Run 배포</li>
-    <li>⑤ <span class="k">/health</span> 스모크 테스트 (실패 시 이전 버전 유지)</li>
+    <li>⑤ 도메인 <span class="k">/health</span> 스모크 테스트</li>
   </ul>
 </div>
 <div class="box" style="left:1094px; top:790px; width:440px; height:116px;">
@@ -202,7 +203,7 @@
   <ul>
     <li>GitHub OIDC 토큰 → 단기 GCP 자격증명 (키 파일 미사용)</li>
     <li>이 레포의 <b>main 브랜치</b>만 배포 SA 사용 가능</li>
-    <li>배포 SA 권한: run.admin · AR writer · 런타임 SA 사용</li>
+    <li>배포 SA: run.admin · AR writer · 런타임 SA 사용 · networkViewer</li>
   </ul>
 </div>
 <div class="badge" style="left:1522px; top:778px;">4</div>
@@ -226,7 +227,7 @@
     <div class="it"><span class="n">3</span><div><b>DB 포트 비노출</b> — Cloud SQL Public IP 미할당, 3306은 VPC 사설망(Cloud Run Direct VPC egress)에서만 접근</div></div>
     <div class="it"><span class="n">4</span><div><b>민감정보 관리</b> — DB 접속정보는 Secret Manager, CI는 WIF 키리스 인증. 레포·이미지·GitHub Secrets에 비밀값 없음</div></div>
     <div class="it"><span class="n">5</span><div><b>WAS / DB 분리</b> — WAS는 Cloud Run, DB는 관리형 Cloud SQL로 분리. 서비스 계정 최소 권한 분리 (런타임 / 배포)</div></div>
-    <div class="it"><span class="n">✓</span><div style="color:#374151;"><b>CI/CD</b> — develop: 빌드·테스트 / main: 테스트 → 빌드 → 배포 → 헬스체크 자동화 (무중단 리비전 전환)</div></div>
+    <div class="it"><span class="n">✓</span><div style="color:#374151;"><b>CI/CD</b> — develop: 빌드·테스트 / main: 테스트 → 빌드 → 배포 → 헬스체크 자동화 (새 리비전 정상 기동 후 트래픽 전환)</div></div>
   </div>
 </div>
 
