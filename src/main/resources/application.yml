@@ -5,6 +5,11 @@ spring:
     default: dev
   jpa:
     open-in-view: false
+  # 이미지 업로드 (images.data MEDIUMBLOB 최대 16MB) — 모든 프로필(로컬/운영) 공통
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 20MB
 
 server:
   port: ${PORT:8080}
