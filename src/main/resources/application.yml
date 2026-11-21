@@ -17,6 +17,13 @@ app:
     max-dimension: 8192   # 가로 · 세로 최대 픽셀 (아이폰 48MP 원본 8064x6048 허용)
     cache-max-age: 30d    # 이미지 조회 Cache-Control (이미지는 수정되지 않으므로 길게)
 
+# Swagger: 응답 미디어 타입을 */* 대신 application/json으로 표시
+springdoc:
+  default-produces-media-type: application/json
+  swagger-ui:
+    operations-sorter: alpha   # 경로순: 목록/생성(/api/routines) → 상세/수정/삭제(/{routineId})
+    display-request-duration: true
+
 server:
   port: ${PORT:8080}
   # Cloud Run 앞단 프록시의 X-Forwarded-* 헤더를 신뢰 (Swagger 등에서 https URL 생성)

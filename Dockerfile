@@ -25,5 +25,7 @@ COPY --from=build /app/extracted/application/ ./
 
 USER spring
 ENV SPRING_PROFILES_ACTIVE=prod
+# 시각(createdAt 등)을 KST로 기록 · 응답 (Cloud Run 기본은 UTC)
+ENV TZ=Asia/Seoul
 EXPOSE 8080
-ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75","org.springframework.boot.loader.launch.JarLauncher"]
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-Duser.timezone=Asia/Seoul", "org.springframework.boot.loader.launch.JarLauncher"]
