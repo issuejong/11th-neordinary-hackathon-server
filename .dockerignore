@@ -6,3 +6,5 @@ out
 *.iml
 .env
 .env.*
+.github
+*.md
