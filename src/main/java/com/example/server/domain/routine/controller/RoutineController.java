@@ -2,6 +2,7 @@ package com.example.server.domain.routine.controller;
 
 import com.example.server.domain.routine.dto.RoutineRequestDTO;
 import com.example.server.domain.routine.dto.RoutineResponseDTO;
+import com.example.server.domain.routine.dto.RoutineSort;
 import com.example.server.domain.routine.service.command.RoutineCommandService;
 import com.example.server.domain.routine.service.query.RoutineQueryService;
 import com.example.server.global.auth.LoginUser;
@@ -11,8 +12,11 @@ import com.example.server.global.response.code.status.SuccessStatus;
 import com.example.server.global.util.Ulid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
 import java.net.URI;
 import lombok.RequiredArgsConstructor;
@@ -24,9 +28,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Routine", description = "루틴 생성 · 상세 조회 · 수정 · 삭제")
+@Tag(name = "Routine", description = "루틴 목록 · 생성 · 상세 조회 · 수정 · 삭제")
 @RestController
 @RequestMapping("/api/routines")
 @RequiredArgsConstructor
@@ -36,6 +41,32 @@ public class RoutineController {
 
   private final RoutineCommandService commandService;
   private final RoutineQueryService queryService;
+
+  @Operation(summary = "루틴 목록",
+      description = """
+          삭제되지 않은 루틴 목록입니다. 인증 없이 조회할 수 있습니다.
+          - 메인: sort만 / 마이페이지 내 루틴: authorId(내 publicId)를 함께 보냅니다. 응답 모양은 같습니다.
+          - 커서 기반 무한 스크롤: 첫 요청은 cursor 없이, 다음 요청은 응답의 nextCursor를 cursor로 보냅니다.
+          - 정렬 값이 같으면(동점) 최신순입니다. cursor는 같은 sort로만 쓸 수 있습니다.
+          """)
+  @GetMapping
+  public ApiResponse<RoutineResponseDTO.Page> list(
+      @Parameter(description = "정렬: latest(최신순), likes(좋아요순), participants(참여자순)",
+          schema = @Schema(allowableValues = {"latest", "likes", "participants"}, defaultValue = "latest"))
+      @RequestParam(defaultValue = "latest")
+      @Pattern(regexp = RoutineSort.REGEX, message = "sort는 latest, likes, participants 중 하나여야 합니다.") String sort,
+      @Parameter(description = "작성자 publicId (마이페이지 내 루틴). 생략하면 전체 루틴", example = DemoData.USER_ID)
+      @RequestParam(required = false)
+      @Pattern(regexp = Ulid.REGEX, message = "authorId는 사용자 publicId(ULID 26자)여야 합니다.") String authorId,
+      @Parameter(description = "다음 페이지 커서 (이전 응답의 nextCursor). 첫 페이지는 비워 둡니다.")
+      @RequestParam(required = false) String cursor,
+      @Parameter(description = "페이지 크기 (1~50)", example = "20")
+      @RequestParam(defaultValue = "20")
+      @Min(value = 1, message = "size는 1 이상이어야 합니다.")
+      @Max(value = 50, message = "size는 50 이하여야 합니다.") int size
+  ) {
+    return ApiResponse.onSuccess(queryService.getList(RoutineSort.from(sort), authorId, cursor, size));
+  }
 
   @Operation(summary = "루틴 생성", description = "카드 1~10장을 함께 등록합니다. 카드 이미지는 이미지 업로드 API로 먼저 올린 imageId를 사용합니다.")
   @PostMapping

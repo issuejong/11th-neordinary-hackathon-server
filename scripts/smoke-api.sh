@@ -60,6 +60,28 @@ req POST /api/images -H 'X-Device-Token: nobody' -F "file=@$TMP/a.png;type=image
 req GET /api/images/01KB0000000000000000ZZZ999;  check "없는 이미지" 404 "$STATUS" IMAGE404 "$BODY"
 req GET /api/images/abc;                           check "잘못된 이미지 ID" 400 "$STATUS" COMMON400 "$BODY"
 
+echo "-- 루틴 목록"
+req GET /api/routines;                             check "목록 (기본 latest)" 200 "$STATUS" COMMON200 "$BODY"
+[[ "$BODY" == *'"hasNext"'* && "$BODY" == *'"routines"'* ]] && check "목록 응답 형식" 1 1 || check "목록 응답 형식" 1 0
+for s in latest likes participants; do req GET "/api/routines?sort=$s&size=5"; check "목록 sort=$s" 200 "$STATUS" COMMON200 "$BODY"; done
+req GET "/api/routines?sort=popular";              check "잘못된 sort" 400 "$STATUS" COMMON400 "$BODY"
+req GET "/api/routines?size=51";                   check "size 초과" 400 "$STATUS" COMMON400 "$BODY"
+req GET "/api/routines?authorId=01KB0000000000000000MEM001&size=50"; check "내 루틴 (authorId)" 200 "$STATUS" COMMON200 "$BODY"
+OWNERS=$(json result.routines | python3 -c 'import sys,ast;print(sorted({r["owner"]["userId"] for r in ast.literal_eval(sys.stdin.read())}))')
+[[ "$OWNERS" == "['01KB0000000000000000MEM001']" ]] && check "authorId 필터 (작성자 1명만)" 1 1 || check "authorId 필터 (작성자 1명만)" 1 0
+req GET "/api/routines?authorId=abc";              check "잘못된 authorId" 400 "$STATUS" COMMON400 "$BODY"
+req GET "/api/routines?cursor=abc";                check "잘못된 커서" 400 "$STATUS" ROUTINE4001 "$BODY"
+for s in latest likes participants; do # 커서를 끝까지 따라가서 중복 없는지
+  CUR=""; SEEN=""; DUP=0; N=0
+  while :; do
+    req GET "/api/routines?sort=$s&size=3${CUR:+&cursor=$CUR}"
+    for id in $(json result.routines | python3 -c 'import sys,ast;[print(r["routineId"]) for r in ast.literal_eval(sys.stdin.read())]'); do
+      [[ " $SEEN " == *" $id "* ]] && DUP=1; SEEN="$SEEN $id"; N=$((N+1)); done
+    CUR=$(json result.nextCursor); [[ "$CUR" == "None" ]] && break
+  done
+  [[ $DUP -eq 0 && $N -gt 0 ]] && check "커서 전체 순회 sort=$s (${N}개, 중복 없음)" 1 1 || check "커서 전체 순회 sort=$s" 1 0
+done
+
 echo "-- 루틴"
 req GET "/api/routines/$ROUTINE";                  check "시드 루틴 상세" 200 "$STATUS" COMMON200 "$BODY"
 BODY_OK=$(printf '{"title":"스모크 테스트 루틴","content":"소개","cards":[%s,%s]}' \
@@ -68,6 +90,7 @@ req POST /api/routines "${A[@]}" "${J[@]}" -d "$BODY_OK"; check "루틴 생성" 
 RID=$(json result.routineId)
 [[ "$(json result.cards.1.order)" == 2 && "$(json result.cards.0.time)" == 07:00 ]] && check "스텝 순서·시간" 1 1 || check "스텝 순서·시간" 1 0
 req GET "/api/routines/$RID";                      check "생성한 루틴 조회" 200 "$STATUS"
+req GET "/api/routines?size=1";                    [[ "$BODY" == *"$RID"* ]] && check "새 루틴이 최신순 맨 앞" 1 1 || check "새 루틴이 최신순 맨 앞" 1 0
 SWAP=$(printf '{"title":"순서 바꾼 루틴","cards":[%s,%s,%s]}' \
   "$(card "$IMAGE" "두 번째 스텝 제목" "08:00")" "$(card "$MYIMG" "첫 번째 스텝 제목" "07:00")" "$(card "$IMAGE" "세 번째 새 스텝" "09:00")")
 req PUT "/api/routines/$RID" "${A[@]}" "${J[@]}" -d "$SWAP"; check "수정(순서 교체·추가)" 200 "$STATUS" COMMON200 "$BODY"

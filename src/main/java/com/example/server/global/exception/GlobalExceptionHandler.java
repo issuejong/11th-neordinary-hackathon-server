@@ -73,9 +73,16 @@ public class GlobalExceptionHandler {
     return failure(ErrorStatus._BAD_REQUEST, errors);
   }
 
+  /** 쿼리 스트링 · 경로 변수 타입 오류 (예: page=abc) */
+  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+  public ResponseEntity<ApiResponse<Map<String, String>>> handleTypeMismatch(
+      MethodArgumentTypeMismatchException exception
+  ) {
+    return failure(ErrorStatus._BAD_REQUEST, Map.of(exception.getName(), "올바른 형식의 값이 아닙니다."));
+  }
+
   @ExceptionHandler({
       ConstraintViolationException.class,
-      MethodArgumentTypeMismatchException.class,
       HttpMessageNotReadableException.class,
       MissingServletRequestParameterException.class,
       MissingServletRequestPartException.class,

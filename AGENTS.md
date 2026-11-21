@@ -43,6 +43,7 @@ com.example.server
 | --- | --- | --- | --- |
 | POST | `/api/images` | 이미지 업로드 (multipart `file`) → 201. 정책은 아래 참고 | O |
 | GET | `/api/images/{imageId}` | 이미지 바이너리 조회 | — |
+| GET | `/api/routines` | 루틴 목록 (메인 · 마이페이지 공용, 마이페이지는 `authorId`=내 publicId 추가) `sort=latest\|likes\|participants`(기본 latest, 동점은 최신순), 커서 페이지네이션 `cursor`(이전 응답의 `nextCursor`), `size`(1~50, 기본 20) → `hasNext`, `nextCursor` | — |
 | POST | `/api/routines` | 루틴 생성 (카드 1~10장) → 201 | O |
 | GET | `/api/routines/{routineId}` | 루틴 상세 (작성자, 카드, 좋아요·댓글 수) | — |
 | PUT | `/api/routines/{routineId}` | 루틴 수정 (카드 전체 교체), 작성자만 | O |
