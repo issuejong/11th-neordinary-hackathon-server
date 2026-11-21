@@ -37,13 +37,16 @@ class ParticipationWorkApiTests extends ApiTestSupport {
     mvc.perform(put(participation + "/completion").header(LoginUser.HEADER, auth)).andExpect(status().isBadRequest());
 
     mvc.perform(put(participation + "/completion").header(LoginUser.HEADER, auth)
-            .contentType(MediaType.APPLICATION_JSON).content(routineJson("함께한 나의 하루", null, validCard())))
+            .contentType(MediaType.APPLICATION_JSON).content(participationResult(1)))
+        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("PARTICIPATION4002"));
+    mvc.perform(put(participation + "/completion").header(LoginUser.HEADER, auth)
+            .contentType(MediaType.APPLICATION_JSON).content(participationResult(2)))
         .andExpect(status().isOk()).andExpect(jsonPath("$.result.completedCount").value(1));
     mvc.perform(get(results)).andExpect(jsonPath("$.result.totalCount").value(1));
     mvc.perform(get(result)).andExpect(jsonPath("$.result.work.title").value("함께한 나의 하루"));
 
     mvc.perform(put(result).header(LoginUser.HEADER, auth)
-            .contentType(MediaType.APPLICATION_JSON).content(routineJson("수정한 나의 하루", null, validCard())))
+            .contentType(MediaType.APPLICATION_JSON).content(routineJson("수정한 나의 하루", null, cards(2))))
         .andExpect(jsonPath("$.result.work.title").value("수정한 나의 하루"));
     mvc.perform(delete(result).header(LoginUser.HEADER, owner)).andExpect(status().isForbidden());
     mvc.perform(delete(result).header(LoginUser.HEADER, auth)).andExpect(status().isOk());

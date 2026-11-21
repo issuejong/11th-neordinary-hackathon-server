@@ -126,6 +126,10 @@ public abstract class ApiTestSupport {
     return card(DemoData.IMAGE_ID, "유효한 스텝 제목", "07:00");
   }
 
+  protected static String participationResult(int stepCount) {
+    return routineJson("함께한 나의 하루", null, cards(stepCount));
+  }
+
   protected static String[] cards(int count) {
     String[] result = new String[count];
     for (int i = 0; i < count; i++) {
