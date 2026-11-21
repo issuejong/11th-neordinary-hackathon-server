@@ -8,6 +8,9 @@ public final class Ulid {
   /** @Pattern 검증용 정규식 (컴파일 타임 상수) */
   public static final String REGEX = "^[0-9A-HJKMNP-TV-Z]{26}$";
 
+  /** @Pattern(regexp = REGEX) 검증 실패 메시지 */
+  public static final String MESSAGE = "올바른 ID 형식(ULID 26자)이 아닙니다.";
+
   private static final char[] ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ".toCharArray();
   private static final SecureRandom RANDOM = new SecureRandom();
 

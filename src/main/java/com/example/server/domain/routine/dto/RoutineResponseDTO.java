@@ -18,7 +18,7 @@ public class RoutineResponseDTO {
   ) {
   }
 
-  @Schema(description = "루틴 상세")
+  @Schema(name = "RoutineDetailResponse", description = "루틴 상세")
   public record Detail(
       @Schema(description = "루틴 publicId", example = "01KB0000000000000000RTN001") String routineId,
       @Schema(example = "갓생 아침 루틴") String title,
@@ -32,7 +32,7 @@ public class RoutineResponseDTO {
   ) {
   }
 
-  @Schema(description = "루틴 목록 (커서 기반 무한 스크롤)")
+  @Schema(name = "RoutinePageResponse", description = "루틴 목록 (커서 기반 무한 스크롤)")
   public record Page(
       List<Summary> routines,
       @Schema(description = "요청한 페이지 크기", example = "20") int size,
@@ -42,7 +42,7 @@ public class RoutineResponseDTO {
   ) {
   }
 
-  @Schema(description = "루틴 목록 항목")
+  @Schema(name = "RoutineSummaryResponse", description = "루틴 목록 항목")
   public record Summary(
       @Schema(description = "루틴 publicId", example = "01KB0000000000000000RTN001") String routineId,
       @Schema(example = "갓생 아침 루틴") String title,
@@ -56,7 +56,7 @@ public class RoutineResponseDTO {
   ) {
   }
 
-  @Schema(description = "루틴 작성자")
+  @Schema(name = "RoutineOwnerResponse", description = "루틴 작성자")
   public record Owner(
       @Schema(description = "사용자 publicId", example = "01KB0000000000000000MEM001") String userId,
       @Schema(example = "데모 유저") String nickname,
@@ -64,7 +64,7 @@ public class RoutineResponseDTO {
   ) {
   }
 
-  @Schema(description = "루틴 카드")
+  @Schema(name = "RoutineCardResponse", description = "루틴 카드")
   public record Card(
       @Schema(description = "카드 publicId") String cardId,
       @Schema(description = "카드 순서 (1부터)", example = "1") int order,
