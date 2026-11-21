@@ -379,7 +379,8 @@ class RoutineListApiTests extends ApiTestSupport {
 
   private void completeVia(String userId, String routineId) throws Exception {
     mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
-            .put("/api/routines/" + routineId + "/participation/completion").header(LoginUser.HEADER, authorization(userId)))
+            .put("/api/routines/" + routineId + "/participation/completion").header(LoginUser.HEADER, authorization(userId))
+            .contentType(org.springframework.http.MediaType.APPLICATION_JSON).content(participationResult(2)))
         .andExpect(status().isOk());
   }
 
@@ -497,6 +498,31 @@ class RoutineListApiTests extends ApiTestSupport {
         .andExpect(jsonPath("$.result.routines[0].myParticipationStatus").value("IN_PROGRESS"))
         .andExpect(jsonPath("$.result.routines[0].inProgressCount").value(1))
         .andExpect(jsonPath("$.result.routines[0].completedCount").value(1));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"likes", "participants"})
+  void keepsRankingOrderBetweenPagesWhenCountsChange(String sort) throws Exception {
+    String owner = newUser();
+    String viewer = newUser();
+    String originallyFirst = createRoutine(owner);
+    String originallySecond = createRoutine(owner);
+    String action = sort.equals("likes") ? "/like" : "/participation";
+    String firstPath = "/api/routines/" + originallyFirst + action;
+    String auth = authorization(viewer);
+    mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put(firstPath)
+        .header(LoginUser.HEADER, auth)).andExpect(status().isOk());
+    String query = "?sort=" + sort + "&authorId=" + owner + "&size=1";
+    String first = page(query);
+    assertThat((String) JsonPath.read(first, "$.result.routines[0].routineId")).isEqualTo(originallyFirst);
+    String cursor = JsonPath.read(first, "$.result.nextCursor");
+
+    mvc.perform(delete(firstPath).header(LoginUser.HEADER, auth)).andExpect(status().isOk());
+    mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+        .put("/api/routines/" + originallySecond + action).header(LoginUser.HEADER, auth)).andExpect(status().isOk());
+    String second = page(query + "&cursor=" + cursor);
+    assertThat((String) JsonPath.read(second, "$.result.routines[0].routineId")).isEqualTo(originallySecond);
+    assertThat((Boolean) JsonPath.read(second, "$.result.hasNext")).isFalse();
   }
 
   // ---------- 검증 ----------

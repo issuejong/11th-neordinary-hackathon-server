@@ -16,7 +16,7 @@ public final class RoutineConverter {
   }
 
   public static RoutineResponseDTO.Interactions toInteractions(RoutineInteractionView view) {
-    String status = view.myParticipationStatus() == null ? "NOT_PARTICIPATING" : view.myParticipationStatus().name();
+    String status = participationStatus(view.myParticipationCount(), view.myCompletedCount());
     return new RoutineResponseDTO.Interactions(view.likeCount(), view.myLikeCount() > 0, view.inProgressCount(),
         view.completedCount(), status);
   }
@@ -61,9 +61,16 @@ public final class RoutineConverter {
         interactions.myLikeCount() > 0,
         interactions.inProgressCount(),
         interactions.completedCount(),
-        interactions.myStatus() == null ? "NOT_PARTICIPATING" : interactions.myStatus().name(),
+        participationStatus(interactions.myParticipationCount(), interactions.myCompletedCount()),
         view.commentCount(),
         view.createdAt());
+  }
+
+  private static String participationStatus(long activeCount, long completedCount) {
+    if (activeCount == 0) {
+      return "NOT_PARTICIPATING";
+    }
+    return completedCount > 0 ? "COMPLETED" : "IN_PROGRESS";
   }
 
   private static RoutineResponseDTO.Card toCard(RoutineCardView card) {

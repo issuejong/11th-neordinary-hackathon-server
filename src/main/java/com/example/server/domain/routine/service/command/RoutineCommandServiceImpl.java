@@ -42,7 +42,7 @@ public class RoutineCommandServiceImpl implements RoutineCommandService {
     User owner = userRepository.getReferenceById(userId);
     Routine routine = routineRepository.save(
         new Routine(Ulid.generate(), owner, request.title(), request.content()));
-    saveCards(routine, request.cards(), userId);
+    saveCards(routine, request.cards(), userId, Map.of());
     return routineQueryService.getDetail(routine.getPublicId());
   }
 
@@ -51,9 +51,11 @@ public class RoutineCommandServiceImpl implements RoutineCommandService {
   public RoutineResponseDTO.Detail update(Long userId, String routineId, RoutineRequestDTO.Save request) {
     Routine routine = getOwnedRoutine(userId, routineId);
     routine.update(request.title(), request.content(), userId);
+    Map<String, Long> existingImages = cardRepository.findViewsByRoutineId(routine.getId()).stream()
+        .collect(Collectors.groupingBy(card -> card.imagePublicId(), Collectors.counting()));
     cardRepository.deleteAllByRoutineId(routine.getId());
     routine = routineRepository.getReferenceById(routine.getId());
-    saveCards(routine, request.cards(), userId);
+    saveCards(routine, request.cards(), userId, existingImages);
     return routineQueryService.getDetail(routineId);
   }
 
@@ -73,12 +75,17 @@ public class RoutineCommandServiceImpl implements RoutineCommandService {
   }
 
   /** 카드 이미지(본인 업로드 또는 기본 이미지)를 한 번에 조회(바이너리 제외)하고, 요청 배열 순서대로 sort_order 1..n 으로 저장한다. */
-  private void saveCards(Routine routine, List<RoutineRequestDTO.Card> cards, Long userId) {
-    List<String> imageIds = cards.stream().map(RoutineRequestDTO.Card::imageId).distinct().toList();
+  private void saveCards(Routine routine, List<RoutineRequestDTO.Card> cards, Long userId,
+      Map<String, Long> existingImages) {
+    Map<String, Long> requestedImages = cards.stream()
+        .collect(Collectors.groupingBy(RoutineRequestDTO.Card::imageId, Collectors.counting()));
+    var imageIds = requestedImages.keySet();
     Map<String, Long> imageIdMap = imageRepository.findUsableKeys(imageIds, userId).stream()
         .collect(Collectors.toMap(ImageKey::publicId, key -> {
-          imagePolicy.validateStepSize(key.byteSize());
-          imagePolicy.validateStepType(key.contentType());
+          if (requestedImages.get(key.publicId()) > existingImages.getOrDefault(key.publicId(), 0L)) {
+            imagePolicy.validateStepSize(key.byteSize());
+            imagePolicy.validateStepType(key.contentType());
+          }
           return key.id();
         }));
     if (imageIdMap.size() != imageIds.size()) {

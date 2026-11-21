@@ -58,6 +58,9 @@ class RoutineParticipationApiTests extends ApiTestSupport {
     assertThat(restarted.getDeletedAt()).isNull();
 
     mvc.perform(put(path + "/completion").header(LoginUser.HEADER, authorization(token)))
+        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("PARTICIPATION400"));
+    mvc.perform(put(path + "/completion").header(LoginUser.HEADER, authorization(token))
+            .contentType(org.springframework.http.MediaType.APPLICATION_JSON).content(participationResult(2)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.result.inProgressCount").value(0))
         .andExpect(jsonPath("$.result.completedCount").value(1))
@@ -73,6 +76,33 @@ class RoutineParticipationApiTests extends ApiTestSupport {
     mvc.perform(get(base + "/interactions").header(LoginUser.HEADER, authorization(token)))
         .andExpect(jsonPath("$.result.completedCount").value(1))
         .andExpect(jsonPath("$.result.myParticipationStatus").value("COMPLETED"));
+  }
+
+  @Test
+  void legacyCompletionWithoutWorkCanBeResumedAndPublished() throws Exception {
+    String routineId = createRoutine(DEMO_USER_ID);
+    String user = newUser();
+    String auth = authorization(user);
+    String base = "/api/routines/" + routineId;
+    String path = base + "/participation";
+    mvc.perform(put(path).header(LoginUser.HEADER, auth)).andExpect(status().isOk());
+    Long participationId = readParticipation(routineId, user).getId();
+    tx.executeWithoutResult(status -> entityManager.find(RoutineParticipation.class, participationId)
+        .complete(LocalDateTime.now().minusDays(1)));
+
+    mvc.perform(get(base + "/interactions").header(LoginUser.HEADER, auth))
+        .andExpect(jsonPath("$.result.completedCount").value(0))
+        .andExpect(jsonPath("$.result.myParticipationStatus").value("IN_PROGRESS"));
+    mvc.perform(put(path + "/draft").header(LoginUser.HEADER, auth)
+            .contentType(org.springframework.http.MediaType.APPLICATION_JSON).content("""
+                {"title":"초안 제목"}
+                """))
+        .andExpect(status().isOk());
+    mvc.perform(get(base + "/participation-results")).andExpect(jsonPath("$.result.totalCount").value(0));
+    mvc.perform(put(path + "/completion").header(LoginUser.HEADER, auth)
+            .contentType(org.springframework.http.MediaType.APPLICATION_JSON).content(participationResult(2)))
+        .andExpect(jsonPath("$.result.completedCount").value(1));
+    mvc.perform(get(base + "/participation-results")).andExpect(jsonPath("$.result.totalCount").value(1));
   }
 
   @Test
@@ -93,7 +123,8 @@ class RoutineParticipationApiTests extends ApiTestSupport {
   @Test
   void swaggerCompletionExampleUsesANonOwnerWithActiveParticipation() throws Exception {
     mvc.perform(put("/api/routines/" + DemoData.ROUTINE_ID + "/participation/completion")
-            .header(LoginUser.HEADER, authorization(DemoData.PARTICIPANT_ID)))
+            .header(LoginUser.HEADER, authorization(DemoData.PARTICIPANT_ID))
+            .contentType(org.springframework.http.MediaType.APPLICATION_JSON).content(participationResult(3)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.result.myParticipationStatus").value("COMPLETED"));
   }

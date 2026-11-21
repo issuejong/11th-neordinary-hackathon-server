@@ -43,11 +43,14 @@ public interface RoutineRepository extends JpaRepository<Routine, Long> {
           (select count(l) from RoutineLike l where l.routine = r and l.deletedAt is null),
           (select count(l) from RoutineLike l where l.routine = r and l.user.id = :userId and l.deletedAt is null),
           (select count(p) from RoutineParticipation p
-           where p.routine = r and p.status = IN_PROGRESS and p.deletedAt is null),
+           where p.routine = r and (p.status = IN_PROGRESS or p.workJson is null) and p.deletedAt is null),
           (select count(p) from RoutineParticipation p
-           where p.routine = r and p.status = COMPLETED and p.deletedAt is null),
-          (select p.status from RoutineParticipation p
-           where p.routine = r and p.user.id = :userId and p.deletedAt is null))
+           where p.routine = r and p.status = COMPLETED and p.workJson is not null and p.deletedAt is null),
+          (select count(p) from RoutineParticipation p
+           where p.routine = r and p.user.id = :userId and p.deletedAt is null),
+          (select count(p) from RoutineParticipation p
+           where p.routine = r and p.user.id = :userId and p.deletedAt is null
+             and p.status = COMPLETED and p.workJson is not null))
       from Routine r
       where r.publicId = :publicId and r.deletedAt is null
       """)
@@ -100,38 +103,37 @@ public interface RoutineRepository extends JpaRepository<Routine, Long> {
         and (:participantId is null or exists (
           select 1 from RoutineParticipation mp join mp.user mu
           where mp.routine = r and mu.publicId = :participantId and mp.deletedAt is null))
-        and ((select count(l) from RoutineLike l where l.routine = r and l.deletedAt is null) < :count
-          or ((select count(l) from RoutineLike l where l.routine = r and l.deletedAt is null) = :count and r.publicId < :publicId))
-      order by (select count(l) from RoutineLike l where l.routine = r and l.deletedAt is null) desc, r.publicId desc
+        and r.publicId in :publicIds
       """)
-  List<RoutineSummaryView> findMostLiked(@Param("authorId") String authorId,
-      @Param("participantId") String participantId, @Param("count") long count, @Param("publicId") String publicId,
-      Pageable pageable);
+  List<RoutineSummaryView> findRankedPage(List<String> publicIds, String authorId, String participantId);
 
   @Query("""
-      select new com.example.server.domain.routine.repository.projection.RoutineSummaryView(
-          r.publicId, r.title, r.content, u.publicId, u.nickname, pi.publicId,
-          (select ci.publicId from RoutineCard c join c.image ci where c.routine = r and c.sortOrder = 1),
-          (select count(c) from RoutineCard c where c.routine = r),
-          (select count(l) from RoutineLike l where l.routine = r and l.deletedAt is null),
-          (select count(p) from RoutineParticipation p where p.routine = r and p.deletedAt is null),
-          (select count(cm) from RoutineComment cm where cm.routine = r and cm.deletedAt is null),
-          r.createdAt)
+      select r.publicId
       from Routine r
       join r.user u
-      join u.profileImage pi
       where r.deletedAt is null
         and (:authorId is null or u.publicId = :authorId)
         and (:participantId is null or exists (
           select 1 from RoutineParticipation mp join mp.user mu
           where mp.routine = r and mu.publicId = :participantId and mp.deletedAt is null))
-        and ((select count(p) from RoutineParticipation p where p.routine = r and p.deletedAt is null) < :count
-          or ((select count(p) from RoutineParticipation p where p.routine = r and p.deletedAt is null) = :count and r.publicId < :publicId))
-      order by (select count(p) from RoutineParticipation p where p.routine = r and p.deletedAt is null) desc, r.publicId desc
+      order by (select count(l) from RoutineLike l where l.routine = r and l.deletedAt is null) desc,
+        r.publicId desc
       """)
-  List<RoutineSummaryView> findMostParticipated(@Param("authorId") String authorId,
-      @Param("participantId") String participantId, @Param("count") long count, @Param("publicId") String publicId,
-      Pageable pageable);
+  List<String> findIdsByLikes(String authorId, String participantId);
+
+  @Query("""
+      select r.publicId
+      from Routine r
+      join r.user u
+      where r.deletedAt is null
+        and (:authorId is null or u.publicId = :authorId)
+        and (:participantId is null or exists (
+          select 1 from RoutineParticipation mp join mp.user mu
+          where mp.routine = r and mu.publicId = :participantId and mp.deletedAt is null))
+      order by (select count(p) from RoutineParticipation p where p.routine = r and p.deletedAt is null) desc,
+        r.publicId desc
+      """)
+  List<String> findIdsByParticipants(String authorId, String participantId);
 
   /** 목록 필터에 해당하는 전체 루틴 수 (프로필 탭의 "내 루틴(N)" · "참여 루틴(N)") */
   @Query("""
@@ -150,9 +152,13 @@ public interface RoutineRepository extends JpaRepository<Routine, Long> {
       select new com.example.server.domain.routine.repository.projection.RoutineListInteractionView(
           r.publicId,
           (select count(l) from RoutineLike l where l.routine = r and l.user.id = :viewerId and l.deletedAt is null),
-          (select count(p) from RoutineParticipation p where p.routine = r and p.status = IN_PROGRESS and p.deletedAt is null),
-          (select count(p) from RoutineParticipation p where p.routine = r and p.status = COMPLETED and p.deletedAt is null),
-          (select p.status from RoutineParticipation p where p.routine = r and p.user.id = :viewerId and p.deletedAt is null))
+          (select count(p) from RoutineParticipation p where p.routine = r and (p.status = IN_PROGRESS or p.workJson is null) and p.deletedAt is null),
+          (select count(p) from RoutineParticipation p where p.routine = r and p.status = COMPLETED and p.workJson is not null and p.deletedAt is null),
+          (select count(p) from RoutineParticipation p
+           where p.routine = r and p.user.id = :viewerId and p.deletedAt is null),
+          (select count(p) from RoutineParticipation p
+           where p.routine = r and p.user.id = :viewerId and p.deletedAt is null
+             and p.status = COMPLETED and p.workJson is not null))
       from Routine r where r.publicId in :publicIds
       """)
   List<RoutineListInteractionView> findListInteractions(@Param("publicIds") List<String> publicIds,

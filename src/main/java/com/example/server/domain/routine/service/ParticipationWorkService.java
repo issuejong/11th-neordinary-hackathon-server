@@ -12,8 +12,8 @@ import com.example.server.domain.routine.dto.RoutineRequestDTO.Save;
 import com.example.server.domain.routine.dto.RoutineResponseDTO.Owner;
 import com.example.server.domain.routine.entity.Routine;
 import com.example.server.domain.routine.entity.RoutineParticipation;
-import com.example.server.domain.routine.entity.RoutineParticipation.Status;
 import com.example.server.domain.routine.repository.RoutineParticipationRepository;
+import com.example.server.domain.routine.repository.RoutineCardRepository;
 import com.example.server.domain.routine.repository.RoutineRepository;
 import com.example.server.domain.routine.service.query.RoutineQueryService;
 import com.example.server.domain.routine.dto.RoutineResponseDTO.Interactions;
@@ -33,6 +33,7 @@ import tools.jackson.databind.ObjectMapper;
 public class ParticipationWorkService {
 
   private final RoutineRepository routines;
+  private final RoutineCardRepository cards;
   private final RoutineParticipationRepository participations;
   private final RoutineQueryService routineQueries;
   private final ImageRepository images;
@@ -54,11 +55,10 @@ public class ParticipationWorkService {
   public Interactions complete(String routineId, Long userId, Save request) {
     Routine routine = lockRoutine(routineId);
     RoutineParticipation participation = findParticipation(routine, userId);
-    if (participation.getStatus() == Status.IN_PROGRESS || participation.getWorkJson() == null) {
+    if (!participation.hasPublishedWork()) {
+      validateCardCount(request, cards.countByRoutine_Id(routine.getId()));
       saveResult(participation, userId, request);
-      if (participation.getStatus() == Status.IN_PROGRESS) {
-        participation.complete(LocalDateTime.now());
-      }
+      participation.complete(LocalDateTime.now());
     }
     return routineQueries.getInteractions(userId, routineId);
   }
@@ -78,6 +78,7 @@ public class ParticipationWorkService {
 
   public Detail updateResult(String routineId, String participantId, Long userId, Save request) {
     RoutineParticipation participation = ownedResult(lockRoutine(routineId), participantId, userId);
+    validateCardCount(request, read(participation).cards().size());
     saveResult(participation, userId, request);
     return detail(routineId, participation);
   }
@@ -107,7 +108,7 @@ public class ParticipationWorkService {
 
   private RoutineParticipation inProgress(Routine routine, Long userId) {
     RoutineParticipation participation = findParticipation(routine, userId);
-    if (participation.getStatus() != Status.IN_PROGRESS) {
+    if (participation.hasPublishedWork()) {
       throw new BusinessException(ErrorStatus.PARTICIPATION_INVALID_STATE);
     }
     return participation;
@@ -115,7 +116,7 @@ public class ParticipationWorkService {
 
   private RoutineParticipation published(Routine routine, String participantId) {
     return participations.findByRoutine_IdAndUser_PublicId(routine.getId(), participantId)
-        .filter(p -> p.getDeletedAt() == null && p.getStatus() == Status.COMPLETED && p.getWorkJson() != null)
+        .filter(p -> p.getDeletedAt() == null && p.hasPublishedWork())
         .orElseThrow(() -> new BusinessException(ErrorStatus.PARTICIPATION_RESULT_NOT_FOUND));
   }
 
@@ -125,6 +126,12 @@ public class ParticipationWorkService {
       throw new BusinessException(ErrorStatus.PARTICIPATION_RESULT_FORBIDDEN);
     }
     return participation;
+  }
+
+  private void validateCardCount(Save request, long expected) {
+    if (request.cards().size() != expected) {
+      throw new BusinessException(ErrorStatus.PARTICIPATION_CARD_COUNT);
+    }
   }
 
   private void saveResult(RoutineParticipation participation, Long userId, Save request) {

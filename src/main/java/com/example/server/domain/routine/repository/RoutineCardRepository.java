@@ -10,6 +10,8 @@ import org.springframework.data.repository.query.Param;
 
 public interface RoutineCardRepository extends JpaRepository<RoutineCard, Long> {
 
+  long countByRoutine_Id(Long routineId);
+
   /** 카드 목록 (sort_order 순, 이미지 바이너리는 읽지 않음) */
   @Query("""
       select new com.example.server.domain.routine.repository.projection.RoutineCardView(

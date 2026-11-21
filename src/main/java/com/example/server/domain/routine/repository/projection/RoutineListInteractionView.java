@@ -1,7 +1,5 @@
 package com.example.server.domain.routine.repository.projection;
 
-import com.example.server.domain.routine.entity.RoutineParticipation.Status;
-
 public record RoutineListInteractionView(String routineId, long myLikeCount, long inProgressCount,
-                                         long completedCount, Status myStatus) {
+                                         long completedCount, long myParticipationCount, long myCompletedCount) {
 }

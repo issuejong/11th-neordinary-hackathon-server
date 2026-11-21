@@ -38,6 +38,7 @@ class RoutineInteractionApiTests extends ApiTestSupport {
 
       entityManager.persist(new RoutineParticipation(routine, viewerUser, now));
       RoutineParticipation completedParticipation = new RoutineParticipation(routine, completedUser, now);
+      completedParticipation.saveWork(participationResult(2));
       completedParticipation.complete(now);
       entityManager.persist(completedParticipation);
       RoutineParticipation canceledParticipation = new RoutineParticipation(routine, canceledUser, now);
