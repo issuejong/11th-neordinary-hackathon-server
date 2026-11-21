@@ -8,7 +8,7 @@
 | --- | --- |
 | `users` | 사용자 프로필과 로그인 조회용 식별자를 저장합니다. |
 | `images` | 기본 프로필 이미지와 카드 이미지의 바이너리를 저장합니다. |
-| `routines` | 루틴의 소유자와 생성·수정·삭제 기록을 저장합니다. |
+| `routines` | 루틴의 소유자, 제목, 소개와 생성·수정·삭제 기록을 저장합니다. |
 | `routine_cards` | 루틴을 구성하는 카드의 내용, 이미지, 시간과 순서를 저장합니다. |
 | `routine_comments` | 루틴에 달린 댓글과 작성·수정·삭제 기록을 저장합니다. |
 | `routine_likes` | 사용자별 루틴 좋아요 상태를 저장합니다. |
@@ -91,6 +91,8 @@
 | `id` | `BIGINT` | NO | PK, AI | — | 내부 식별자(PK) |
 | `public_id` | `CHAR(26)` | NO | — | — | 외부 노출용 식별자(ULID) |
 | `user_id` | `BIGINT` | NO | FK | — | 소유자 users.id |
+| `title` | `VARCHAR(30)` | NO | — | 루틴 제목 |
+| `content` | `VARCHAR(100)` | YES | — | 루틴 소개 |
 | `created_at` | `DATETIME` | NO | — | `CURRENT_TIMESTAMP` | 생성일시 |
 | `created_by` | `BIGINT` | NO | — | — | 생성 주체 user id |
 | `updated_at` | `DATETIME` | NO | — | `CURRENT_TIMESTAMP` | 수정일시 |

@@ -37,9 +37,17 @@ public class Routine extends SoftDeletableEntity {
   @JoinColumn(name = "user_id", nullable = false)
   private User user;
 
-  public Routine(String publicId, User user) {
+  @Column(nullable = false, length = 30)
+  private String title;
+
+  @Column(length = 100)
+  private String content;
+
+  public Routine(String publicId, User user, String title, String content) {
     super(user.getId());
     this.publicId = publicId;
     this.user = user;
+    this.title = title;
+    this.content = content;
   }
 }

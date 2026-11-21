@@ -41,7 +41,7 @@ class RoutineEntityMappingTests {
     User member = new User(publicId(3), "member-token", "참여자", image);
     entityManager.persist(owner);
     entityManager.persist(member);
-    Routine routine = new Routine(publicId(4), owner);
+    Routine routine = new Routine(publicId(4), owner, "아침 준비 루틴", "출근 전 하루를 준비해요.");
     entityManager.persist(routine);
     RoutineCard card = new RoutineCard(publicId(5), routine, 1, image, "첫 번째 활동", null, LocalTime.of(7, 30));
     RoutineComment comment = new RoutineComment(publicId(6), routine, member, "좋아요");
@@ -58,7 +58,10 @@ class RoutineEntityMappingTests {
         .setParameter("publicId", member.getPublicId())
         .getSingleResult();
     assertArrayEquals(data, savedUser.getProfileImage().getData());
-    assertEquals(owner.getId(), entityManager.find(Routine.class, routine.getId()).getCreatedBy());
+    Routine savedRoutine = entityManager.find(Routine.class, routine.getId());
+    assertEquals(owner.getId(), savedRoutine.getCreatedBy());
+    assertEquals("아침 준비 루틴", savedRoutine.getTitle());
+    assertEquals("출근 전 하루를 준비해요.", savedRoutine.getContent());
     assertEquals(LocalTime.of(7, 30), entityManager.find(RoutineCard.class, card.getId()).getCardTime());
     assertNotNull(entityManager.find(RoutineComment.class, comment.getId()).getCreatedAt());
     assertEquals(member.getId(), entityManager.find(RoutineLike.class, like.getId()).getUser().getId());
@@ -73,7 +76,7 @@ class RoutineEntityMappingTests {
     entityManager.persist(image);
     User user = new User(publicId(2), "owner-token", "작성자", image);
     entityManager.persist(user);
-    Routine routine = new Routine(publicId(3), user);
+    Routine routine = new Routine(publicId(3), user, "아침 준비 루틴", null);
     entityManager.persist(routine);
     entityManager.persist(new RoutineCard(publicId(4), routine, 1, image, "첫 번째 활동", null, null));
     entityManager.flush();
