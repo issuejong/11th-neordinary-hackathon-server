@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Test Account", description = "고정 테스트 계정 등록과 사용권 관리")
+@Tag(name = "Test Account")
 @RestController
 @RequestMapping("/api/test-accounts")
 @RequiredArgsConstructor

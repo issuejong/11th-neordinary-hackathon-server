@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Routine Like", description = "루틴 좋아요 설정 · 취소")
+@Tag(name = "Routine Like")
 @RestController
 @RequestMapping("/api/routines/{routineId}/like")
 @RequiredArgsConstructor
