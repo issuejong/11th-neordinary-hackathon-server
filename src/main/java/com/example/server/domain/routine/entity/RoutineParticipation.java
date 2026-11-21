@@ -51,8 +51,8 @@ public class RoutineParticipation extends SoftDeletableEntity {
   @ColumnDefault("'IN_PROGRESS'")
   private Status status;
 
-  @Column(name = "joined_at", nullable = false)
-  @ColumnDefault("CURRENT_TIMESTAMP")
+  @Column(name = "joined_at", nullable = false, secondPrecision = 6)
+  @ColumnDefault("CURRENT_TIMESTAMP(6)")
   private LocalDateTime joinedAt;
 
   @Column(name = "completed_at")
