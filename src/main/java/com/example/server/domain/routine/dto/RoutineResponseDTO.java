@@ -35,6 +35,7 @@ public class RoutineResponseDTO {
   @Schema(name = "RoutinePageResponse", description = "루틴 목록 (커서 기반 무한 스크롤)")
   public record Page(
       @Schema(description = "루틴 목록 (정렬 순서대로)") List<Summary> routines,
+      @Schema(description = "필터(authorId · participantId)에 해당하는 전체 루틴 수 — 프로필 탭 개수 표시용", example = "3") long totalCount,
       @Schema(description = "요청한 페이지 크기", example = "20") int size,
       @Schema(description = "다음 페이지 존재 여부", example = "true") boolean hasNext,
       @Schema(description = "다음 페이지 요청 시 cursor로 보낼 값 (마지막 페이지면 null)", example = "TEFURVNUfDB8MDFNN1o4N1dBMVdSS0QxNk43TTI2NkVKQjI")
@@ -52,6 +53,7 @@ public class RoutineResponseDTO {
       @Schema(description = "스텝 개수", example = "3") long cardCount,
       @Schema(description = "좋아요 수", example = "0") long likeCount,
       @Schema(description = "참여자 수 (참여 중 + 완료, 취소 제외)", example = "0") long participantCount,
+      @Schema(description = "댓글 수 (삭제 제외)", example = "0") long commentCount,
       @Schema(description = "KST 기준 생성 시각", example = "2026-11-22T09:30:00.123456") LocalDateTime createdAt
   ) {
   }

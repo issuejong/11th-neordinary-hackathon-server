@@ -369,6 +369,117 @@ class RoutineListApiTests extends ApiTestSupport {
         .andExpect(jsonPath("$.result.authorId").isString());
   }
 
+  // ---------- participantId (프로필 참여 루틴 탭) · totalCount ----------
+
+  private void joinVia(String userId, String routineId) throws Exception {
+    mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+            .put("/api/routines/" + routineId + "/participation").header(LoginUser.HEADER, authorization(userId)))
+        .andExpect(status().isOk());
+  }
+
+  private void completeVia(String userId, String routineId) throws Exception {
+    mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+            .put("/api/routines/" + routineId + "/participation/completion").header(LoginUser.HEADER, authorization(userId)))
+        .andExpect(status().isOk());
+  }
+
+  private void cancelVia(String userId, String routineId) throws Exception {
+    mvc.perform(delete("/api/routines/" + routineId + "/participation").header(LoginUser.HEADER, authorization(userId)))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  @DisplayName("participantId: 참여 중 · 완료한 루틴만 최신순, 참여 취소 · 삭제된 루틴 · 남의 참여는 제외 (참여 API로 검증)")
+  void participatedRoutines() throws Exception {
+    String me = newUser();
+    String inProgress = createRoutine(DEMO_USER_ID);
+    String completed = createRoutine(DEMO_USER_ID);
+    String canceled = createRoutine(DEMO_USER_ID);
+    String deleted = createRoutine(DEMO_USER_ID);
+    String othersOnly = createRoutine(DEMO_USER_ID);
+
+    joinVia(me, inProgress);
+    joinVia(me, completed);
+    completeVia(me, completed);
+    joinVia(me, canceled);
+    cancelVia(me, canceled);
+    joinVia(me, deleted);
+    mvc.perform(delete("/api/routines/" + deleted).header(LoginUser.HEADER, authorization(DEMO_USER_ID))).andExpect(status().isOk());
+    joinVia(newUser(), othersOnly);
+
+    String json = page("?participantId=" + me);
+    assertThat(ids(JsonPath.read(json, "$.result.routines"))).containsExactly(completed, inProgress); // 최신순
+    assertThat(((Number) JsonPath.read(json, "$.result.totalCount")).longValue()).isEqualTo(2);
+    // 카드 모양은 메인 목록과 같다
+    assertThat(list("?size=1&participantId=" + me).getFirst().keySet())
+        .isEqualTo(list("?size=1").getFirst().keySet());
+  }
+
+  @Test
+  @DisplayName("participantId + 커서: 끝까지 따라가도 참여 루틴만, 중복 없음, totalCount는 페이지마다 같다")
+  void participatedRoutinesWithCursor() throws Exception {
+    String me = newUser();
+    List<String> joined = new java.util.ArrayList<>();
+    for (int i = 0; i < 5; i++) {
+      String r = createRoutine(DEMO_USER_ID);
+      joinVia(me, r);
+      joined.add(r);
+      createRoutine(DEMO_USER_ID); // 참여 안 한 루틴
+    }
+    List<String> walked = new java.util.ArrayList<>();
+    String cursor = null;
+    do {
+      String json = page("?size=2&participantId=" + me + (cursor == null ? "" : "&cursor=" + cursor));
+      walked.addAll(ids(JsonPath.read(json, "$.result.routines")));
+      assertThat(((Number) JsonPath.read(json, "$.result.totalCount")).longValue()).isEqualTo(5);
+      cursor = JsonPath.read(json, "$.result.nextCursor");
+    } while (cursor != null);
+    assertThat(walked).containsExactlyElementsOf(joined.reversed());
+  }
+
+  @Test
+  @DisplayName("totalCount: 내 루틴 탭 개수 = 삭제 제외 내가 만든 루틴 수, 참여 없는 사용자는 0")
+  void totalCountForProfileTabs() throws Exception {
+    String me = newUser();
+    createRoutine(me);
+    createRoutine(me);
+    String removed = createRoutine(me);
+    mvc.perform(delete("/api/routines/" + removed).header(LoginUser.HEADER, authorization(me))).andExpect(status().isOk());
+
+    mvc.perform(get("/api/routines").param("authorId", me).param("size", "1"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.result.totalCount").value(2))
+        .andExpect(jsonPath("$.result.routines.length()").value(1))
+        .andExpect(jsonPath("$.result.hasNext").value(true));
+    mvc.perform(get("/api/routines").param("participantId", me))
+        .andExpect(jsonPath("$.result.totalCount").value(0))
+        .andExpect(jsonPath("$.result.routines.length()").value(0));
+  }
+
+  @Test
+  @DisplayName("목록 항목에 댓글 수(commentCount)가 있다 (삭제된 댓글 제외)")
+  void commentCountInList() throws Exception {
+    String routineId = createRoutine(DEMO_USER_ID);
+    for (String content : List.of("첫 댓글", "둘째 댓글")) {
+      mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+              .post("/api/routines/" + routineId + "/comments").header(LoginUser.HEADER, authorization(DEMO_USER_ID))
+              .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+              .content("{\"content\": \"" + content + "\"}"))
+          .andExpect(status().isCreated());
+    }
+    mvc.perform(get("/api/routines").param("size", "1"))
+        .andExpect(jsonPath("$.result.routines[0].routineId").value(routineId))
+        .andExpect(jsonPath("$.result.routines[0].commentCount").value(2));
+  }
+
+  @ParameterizedTest(name = "participantId={0} → 400")
+  @ValueSource(strings = {"abc", "demo-device-token", " "})
+  void invalidParticipantId(String participantId) throws Exception {
+    mvc.perform(get("/api/routines").param("participantId", participantId))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.result.participantId").isString());
+  }
+
   // ---------- 검증 ----------
 
   @ParameterizedTest(name = "sort={0} → 400")

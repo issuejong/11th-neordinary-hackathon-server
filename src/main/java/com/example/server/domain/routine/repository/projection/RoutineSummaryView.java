@@ -13,6 +13,7 @@ public record RoutineSummaryView(
     long cardCount,
     long likeCount,
     long participantCount,
+    long commentCount,
     LocalDateTime createdAt
 ) {
 }
