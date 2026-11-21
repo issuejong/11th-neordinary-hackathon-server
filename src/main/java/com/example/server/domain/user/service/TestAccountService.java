@@ -10,6 +10,7 @@ import com.example.server.domain.user.service.command.UserCommandService;
 import com.example.server.domain.user.support.TestAccountProperties;
 import com.example.server.domain.user.support.TestAccountTokens;
 import com.example.server.global.exception.BusinessException;
+import com.example.server.global.init.DemoData;
 import com.example.server.global.response.code.status.ErrorStatus;
 import java.time.Instant;
 import java.util.List;
@@ -57,7 +58,8 @@ public class TestAccountService {
   public TestAccountResponseDTO.Claim claim(String publicId) {
     TestAccountLease lease = lockAccount(publicId);
     Instant now = Instant.now();
-    if (lease.isActiveAt(now)) {
+    // 8번 심사용 계정은 여러 심사자가 Swagger에서 이어서 쓰므로, 사용 중이어도 새 사용권을 발급한다(이전 토큰은 무효)
+    if (lease.isActiveAt(now) && lease.getSlot() != DemoData.REVIEW_SLOT) {
       throw new BusinessException(ErrorStatus.TEST_ACCOUNT_IN_USE);
     }
     String token = TestAccountTokens.generate();

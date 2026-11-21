@@ -1,5 +1,6 @@
 package com.example.server.domain.user.dto;
 
+import com.example.server.global.util.TextPatterns;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -10,7 +11,7 @@ import jakarta.validation.constraints.Size;
 
 public class TestAccountRequestDTO {
 
-  public static final int MAX_SLOTS = 7;
+  public static final int MAX_SLOTS = 8; // 1~7 팀 테스트 계정, 8 = 심사용(데모 유저)
 
   @Schema(name = "TestAccountRegisterRequest")
   public record Register(
@@ -19,7 +20,7 @@ public class TestAccountRequestDTO {
       @Schema(description = "테스트 계정 닉네임 (2~10자)", example = "아침친구")
       @NotBlank @Size(max = 30) String nickname,
       @Schema(description = "선택 입력인 한 줄 소개", example = "매일 산책해요.", nullable = true)
-      @Size(max = 50) @Pattern(regexp = "[^\\r\\n\\x0B\\f\\x85\\u2028\\u2029]*") String bio
+      @Size(max = 50) @Pattern(regexp = TextPatterns.SINGLE_LINE, message = "한 줄 소개에는 " + TextPatterns.SINGLE_LINE_MESSAGE) String bio
   ) {
   }
 }

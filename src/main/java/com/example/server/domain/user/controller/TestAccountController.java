@@ -3,6 +3,7 @@ package com.example.server.domain.user.controller;
 import com.example.server.domain.user.dto.TestAccountRequestDTO.Register;
 import com.example.server.domain.user.dto.TestAccountResponseDTO;
 import com.example.server.domain.user.service.TestAccountService;
+import com.example.server.global.init.DemoData;
 import com.example.server.global.response.ApiResponse;
 import com.example.server.global.response.code.status.SuccessStatus;
 import com.example.server.global.util.Ulid;
@@ -51,7 +52,7 @@ public class TestAccountController {
   @Operation(summary = "테스트 계정 선택", description = "목록 응답의 publicId를 전달합니다. 사용 중인 계정은 409를 반환합니다.")
   @PostMapping("/{publicId}/claim")
   public ApiResponse<TestAccountResponseDTO.Claim> claim(
-      @Parameter(description = "목록에서 가져온 테스트 계정 publicId")
+      @Parameter(description = "목록에서 가져온 테스트 계정 publicId (예시: 8번 심사용 데모 유저)", example = DemoData.USER_ID)
       @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String publicId
   ) {
     return ApiResponse.onSuccess(accounts.claim(publicId));
@@ -60,7 +61,7 @@ public class TestAccountController {
   @Operation(summary = "테스트 계정 사용 시간 연장", security = @SecurityRequirement(name = "TestAccountSession"))
   @PostMapping("/{publicId}/heartbeat")
   public ApiResponse<TestAccountResponseDTO.Heartbeat> heartbeat(
-      @Parameter(description = "사용 중인 테스트 계정 publicId")
+      @Parameter(description = "사용 중인 테스트 계정 publicId", example = DemoData.USER_ID)
       @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String publicId,
       @Parameter(hidden = true) @RequestHeader(name = HttpHeaders.AUTHORIZATION, required = false) String authorization
   ) {
@@ -70,7 +71,7 @@ public class TestAccountController {
   @Operation(summary = "테스트 계정 사용 종료", security = @SecurityRequirement(name = "TestAccountSession"))
   @DeleteMapping("/{publicId}/claim")
   public ApiResponse<Void> release(
-      @Parameter(description = "사용 중인 테스트 계정 publicId")
+      @Parameter(description = "사용 중인 테스트 계정 publicId", example = DemoData.USER_ID)
       @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String publicId,
       @Parameter(hidden = true) @RequestHeader(name = HttpHeaders.AUTHORIZATION, required = false) String authorization
   ) {

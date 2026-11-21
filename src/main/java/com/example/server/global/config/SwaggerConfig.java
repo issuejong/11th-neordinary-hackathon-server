@@ -75,6 +75,11 @@ public class SwaggerConfig {
         - ID는 모두 **publicId(ULID 26자, 예: `01KB0000000000000000RTN001`)** 입니다.
         - 시각(`createdAt` 등)은 **KST(Asia/Seoul)** 기준 `yyyy-MM-dd'T'HH:mm:ss.SSSSSS` (시간대 표기 없음), 스텝 시간은 `HH:mm`.
 
+        ### ✅ 심사용: Swagger 예시 바로 실행하기
+        1. `POST /api/test-accounts/{publicId}/claim` 을 **예시값(8번 심사용 계정 `데모 유저`) 그대로** Execute
+        2. 응답의 `result.accessToken` 을 복사해 오른쪽 위 **Authorize** 에 붙여넣기
+        3. 이후 모든 API를 **예시값 그대로** Execute 하면 성공합니다. (수정 · 삭제 · 함께하기 예시 데이터는 데모 유저 소유이며 10초마다 자동 복구)
+
         ### 사용자 식별 (데모)
         - `GET /api/test-accounts`에서 등록된 계정을 확인하고, 사용 가능한 계정의 `publicId`로 `POST /api/test-accounts/{publicId}/claim`을 호출합니다.
         - 응답의 `accessToken`을 Swagger의 Authorize에 입력하거나 `Authorization: Bearer <accessToken>`으로 보냅니다.
@@ -92,7 +97,7 @@ public class SwaggerConfig {
         - 마이페이지 내 루틴: `&authorId=<내 publicId>` 추가 (응답 모양 동일)
 
         ### 데모 데이터
-        Swagger 예시용 루틴 · 댓글은 삭제 예시를 실행해도 **1분 안에 자동 복구**됩니다.
+        Swagger 예시용 루틴 · 댓글 · 함께하기 데이터는 삭제 예시를 실행해도 **10초 안에 자동 복구**됩니다.
 
         ### 에러 코드 전체
         | HTTP | code | message |
@@ -132,6 +137,7 @@ public class SwaggerConfig {
           operation.addSecurityItem(new SecurityRequirement());
         }
         operation.addSecurityItem(new SecurityRequirement().addList(TEST_ACCOUNT_SESSION));
+        addLoginGuide(operation, loginUser.required());
       }
       markCreated(operation, handlerMethod);
       if (!handlerMethod.getMethod().getDeclaringClass().getPackageName().endsWith(".health")) {
@@ -139,6 +145,16 @@ public class SwaggerConfig {
       }
       return operation;
     };
+  }
+
+  /** 로그인이 필요한 API 설명 맨 앞에 사용권 발급 → Authorize 순서를 붙인다 (예시 실행 시 401 방지) */
+  private static void addLoginGuide(Operation operation, boolean required) {
+    String guide = required
+        ? "🔒 **로그인 필요** — 먼저 `POST /api/test-accounts/{publicId}/claim`을 예시값(8번 심사용 데모 유저) 그대로 실행해 "
+            + "`accessToken`을 받고, 오른쪽 위 **Authorize**에 입력한 뒤 실행하세요. 없으면 `401 TEST401`.\n\n"
+        : "🔓 로그인 선택 — Authorize에 `accessToken`을 넣으면 내 상태(`isMine` 등)가 함께 표시됩니다.\n\n";
+    String description = operation.getDescription();
+    operation.setDescription(description == null || description.isBlank() ? guide.strip() : guide + description);
   }
 
   private static void markCreated(Operation operation, HandlerMethod handlerMethod) {

@@ -35,7 +35,11 @@ class TestAccountApiTests extends ApiTestSupport {
 
   @Test
   void anyoneCanRegisterUpToSevenSlotsWithoutCredentials() throws Exception {
-    register(8, "테스트 여덟째").andExpect(status().isBadRequest());
+    register(9, "테스트 아홉째").andExpect(status().isBadRequest());
+    // 8번은 심사용(데모 유저)으로 서버 시작 시 예약된다
+    register(8, "테스트 여덟째").andExpect(status().isConflict());
+    mvc.perform(get(BASE))
+        .andExpect(jsonPath("$.result[?(@.slot == 8)].publicId").value(com.example.server.global.init.DemoData.USER_ID));
     createAccount(6, "테스트 여섯째");
     String lastId = createAccount(7, "테스트 일곱째");
     String id = createAccount(1, "테스트 첫째");
@@ -114,5 +118,15 @@ class TestAccountApiTests extends ApiTestSupport {
   private String claim(String path) throws Exception {
     String response = mvc.perform(post(path)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
     return "Bearer " + JsonPath.<String>read(response, "$.result.accessToken");
+  }
+
+  @Test
+  void reviewAccountCanBeClaimedAgainWhileInUse() throws Exception {
+    String claimPath = BASE + "/" + com.example.server.global.init.DemoData.USER_ID + "/claim";
+    String first = claim(claimPath);
+    String second = claim(claimPath); // 사용 중이어도 8번 심사용 계정은 다시 발급
+    org.assertj.core.api.Assertions.assertThat(second).isNotEqualTo(first);
+    mvc.perform(get("/api/users/me").header("Authorization", second)).andExpect(status().isOk());
+    mvc.perform(get("/api/users/me").header("Authorization", first)).andExpect(status().isUnauthorized());
   }
 }
