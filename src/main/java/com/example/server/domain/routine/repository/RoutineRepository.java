@@ -53,7 +53,8 @@ public interface RoutineRepository extends JpaRepository<Routine, Long> {
   Optional<RoutineInteractionView> findInteractions(@Param("publicId") String publicId, @Param("userId") Long userId);
 
   // ---------- 목록: 커서(키셋) 페이지네이션 ----------
-  // 삭제되지 않은 루틴만. authorId(작성자 publicId)가 있으면 그 사람 루틴만 (마이페이지 내 루틴).
+  // 삭제되지 않은 루틴만. authorId(작성자 publicId)가 있으면 그 사람 루틴만 (프로필 내 루틴 탭),
+  // participantId가 있으면 그 사람이 참여 중 · 완료한 루틴만 (프로필 참여 루틴 탭, 참여 취소 제외).
   // publicId(ULID, 생성 시각순)로 최신순 · 동점 처리.
   // 커서 = 직전 페이지 마지막 항목의 (정렬 값, publicId). 첫 페이지는 RoutineCursor.first()의 최댓값.
 
@@ -64,16 +65,21 @@ public interface RoutineRepository extends JpaRepository<Routine, Long> {
           (select count(c) from RoutineCard c where c.routine = r),
           (select count(l) from RoutineLike l where l.routine = r and l.deletedAt is null),
           (select count(p) from RoutineParticipation p where p.routine = r and p.deletedAt is null),
+          (select count(cm) from RoutineComment cm where cm.routine = r and cm.deletedAt is null),
           r.createdAt)
       from Routine r
       join r.user u
       join u.profileImage pi
       where r.deletedAt is null
         and (:authorId is null or u.publicId = :authorId)
+        and (:participantId is null or exists (
+          select 1 from RoutineParticipation mp join mp.user mu
+          where mp.routine = r and mu.publicId = :participantId and mp.deletedAt is null))
         and r.publicId < :publicId
       order by r.publicId desc
       """)
-  List<RoutineSummaryView> findLatest(@Param("authorId") String authorId, @Param("publicId") String publicId,
+  List<RoutineSummaryView> findLatest(@Param("authorId") String authorId,
+      @Param("participantId") String participantId, @Param("publicId") String publicId,
       Pageable pageable);
 
   @Query("""
@@ -83,17 +89,22 @@ public interface RoutineRepository extends JpaRepository<Routine, Long> {
           (select count(c) from RoutineCard c where c.routine = r),
           (select count(l) from RoutineLike l where l.routine = r and l.deletedAt is null),
           (select count(p) from RoutineParticipation p where p.routine = r and p.deletedAt is null),
+          (select count(cm) from RoutineComment cm where cm.routine = r and cm.deletedAt is null),
           r.createdAt)
       from Routine r
       join r.user u
       join u.profileImage pi
       where r.deletedAt is null
         and (:authorId is null or u.publicId = :authorId)
+        and (:participantId is null or exists (
+          select 1 from RoutineParticipation mp join mp.user mu
+          where mp.routine = r and mu.publicId = :participantId and mp.deletedAt is null))
         and ((select count(l) from RoutineLike l where l.routine = r and l.deletedAt is null) < :count
           or ((select count(l) from RoutineLike l where l.routine = r and l.deletedAt is null) = :count and r.publicId < :publicId))
       order by (select count(l) from RoutineLike l where l.routine = r and l.deletedAt is null) desc, r.publicId desc
       """)
-  List<RoutineSummaryView> findMostLiked(@Param("authorId") String authorId, @Param("count") long count, @Param("publicId") String publicId,
+  List<RoutineSummaryView> findMostLiked(@Param("authorId") String authorId,
+      @Param("participantId") String participantId, @Param("count") long count, @Param("publicId") String publicId,
       Pageable pageable);
 
   @Query("""
@@ -103,16 +114,34 @@ public interface RoutineRepository extends JpaRepository<Routine, Long> {
           (select count(c) from RoutineCard c where c.routine = r),
           (select count(l) from RoutineLike l where l.routine = r and l.deletedAt is null),
           (select count(p) from RoutineParticipation p where p.routine = r and p.deletedAt is null),
+          (select count(cm) from RoutineComment cm where cm.routine = r and cm.deletedAt is null),
           r.createdAt)
       from Routine r
       join r.user u
       join u.profileImage pi
       where r.deletedAt is null
         and (:authorId is null or u.publicId = :authorId)
+        and (:participantId is null or exists (
+          select 1 from RoutineParticipation mp join mp.user mu
+          where mp.routine = r and mu.publicId = :participantId and mp.deletedAt is null))
         and ((select count(p) from RoutineParticipation p where p.routine = r and p.deletedAt is null) < :count
           or ((select count(p) from RoutineParticipation p where p.routine = r and p.deletedAt is null) = :count and r.publicId < :publicId))
       order by (select count(p) from RoutineParticipation p where p.routine = r and p.deletedAt is null) desc, r.publicId desc
       """)
-  List<RoutineSummaryView> findMostParticipated(@Param("authorId") String authorId, @Param("count") long count, @Param("publicId") String publicId,
+  List<RoutineSummaryView> findMostParticipated(@Param("authorId") String authorId,
+      @Param("participantId") String participantId, @Param("count") long count, @Param("publicId") String publicId,
       Pageable pageable);
+
+  /** 목록 필터에 해당하는 전체 루틴 수 (프로필 탭의 "내 루틴(N)" · "참여 루틴(N)") */
+  @Query("""
+      select count(r)
+      from Routine r
+      join r.user u
+      where r.deletedAt is null
+        and (:authorId is null or u.publicId = :authorId)
+        and (:participantId is null or exists (
+          select 1 from RoutineParticipation mp join mp.user mu
+          where mp.routine = r and mu.publicId = :participantId and mp.deletedAt is null))
+      """)
+  long countForList(@Param("authorId") String authorId, @Param("participantId") String participantId);
 }

@@ -9,5 +9,5 @@ public interface RoutineQueryService {
 
   RoutineResponseDTO.Interactions getInteractions(Long userId, String routineId);
 
-  RoutineResponseDTO.Page getList(RoutineSort sort, String authorId, String cursor, int size);
+  RoutineResponseDTO.Page getList(RoutineSort sort, String authorId, String participantId, String cursor, int size);
 }

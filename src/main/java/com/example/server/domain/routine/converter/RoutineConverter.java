@@ -36,9 +36,10 @@ public final class RoutineConverter {
         header.updatedAt());
   }
 
-  public static RoutineResponseDTO.Page toPage(List<RoutineSummaryView> views, int size, String nextCursor) {
+  public static RoutineResponseDTO.Page toPage(List<RoutineSummaryView> views, long totalCount, int size,
+      String nextCursor) {
     return new RoutineResponseDTO.Page(
-        views.stream().map(RoutineConverter::toSummary).toList(), size, nextCursor != null, nextCursor);
+        views.stream().map(RoutineConverter::toSummary).toList(), totalCount, size, nextCursor != null, nextCursor);
   }
 
   private static RoutineResponseDTO.Summary toSummary(RoutineSummaryView view) {
@@ -54,6 +55,7 @@ public final class RoutineConverter {
         view.cardCount(),
         view.likeCount(),
         view.participantCount(),
+        view.commentCount(),
         view.createdAt());
   }
 

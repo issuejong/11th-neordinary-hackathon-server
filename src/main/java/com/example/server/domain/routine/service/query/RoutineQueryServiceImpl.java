@@ -50,19 +50,20 @@ public class RoutineQueryServiceImpl implements RoutineQueryService {
 
   @Override
   @Transactional(readOnly = true)
-  public RoutineResponseDTO.Page getList(RoutineSort sort, String authorId, String cursor, int size) {
+  public RoutineResponseDTO.Page getList(RoutineSort sort, String authorId, String participantId, String cursor,
+      int size) {
     RoutineCursor from = RoutineCursor.decode(cursor, sort);
     Pageable limit = PageRequest.of(0, size + 1); // 한 개 더 조회해서 다음 페이지 여부 판단
     List<RoutineSummaryView> rows = switch (sort) {
-      case LATEST -> routineRepository.findLatest(authorId, from.publicId(), limit);
-      case LIKES -> routineRepository.findMostLiked(authorId, from.count(), from.publicId(), limit);
-      case PARTICIPANTS -> routineRepository.findMostParticipated(authorId, from.count(), from.publicId(), limit);
+      case LATEST -> routineRepository.findLatest(authorId, participantId, from.publicId(), limit);
+      case LIKES -> routineRepository.findMostLiked(authorId, participantId, from.count(), from.publicId(), limit);
+      case PARTICIPANTS -> routineRepository.findMostParticipated(authorId, participantId, from.count(), from.publicId(), limit);
     };
 
     boolean hasNext = rows.size() > size;
     List<RoutineSummaryView> page = hasNext ? rows.subList(0, size) : rows;
     String nextCursor = hasNext ? nextCursor(sort, page.getLast()) : null;
-    return RoutineConverter.toPage(page, size, nextCursor);
+    return RoutineConverter.toPage(page, routineRepository.countForList(authorId, participantId), size, nextCursor);
   }
 
   private static String nextCursor(RoutineSort sort, RoutineSummaryView last) {
