@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import org.springdoc.core.customizers.OperationCustomizer;
 import org.springdoc.core.utils.SpringDocUtils;
@@ -72,6 +73,7 @@ public class SwaggerConfig {
 
         ### 인증 (임시)
         - 로그인 사용자가 필요한 API는 헤더 **`X-Device-Token: <기기 토큰>`** 을 보냅니다.
+        - 댓글 목록은 기기 토큰 없이 조회할 수 있습니다. 토큰을 보내면 내 댓글에 `isMine: true`가 표시됩니다.
         - 처음엔 `POST /api/users`로 가입하고, 이후 같은 토큰으로 호출합니다. 모르는 토큰이면 `404 USER404`.
         - Swagger 예시값은 데모 사용자 토큰(`%s`)이라 그대로 Execute 하면 됩니다.
 
@@ -116,19 +118,24 @@ public class SwaggerConfig {
   @Bean
   public OperationCustomizer commonOperationCustomizer() {
     return (operation, handlerMethod) -> {
-      boolean needsLogin = Arrays.stream(handlerMethod.getMethodParameters())
-          .anyMatch(p -> p.hasParameterAnnotation(LoginUser.class));
-      if (needsLogin) {
+      LoginUser loginUser = Arrays.stream(handlerMethod.getMethodParameters())
+          .map(parameter -> parameter.getParameterAnnotation(LoginUser.class))
+          .filter(Objects::nonNull)
+          .findFirst()
+          .orElse(null);
+      if (loginUser != null) {
         operation.addParametersItem(new HeaderParameter()
             .name(LoginUser.HEADER)
-            .required(true)
-            .description("요청한 사용자의 기기 토큰 (임시 인증). 데모 사용자: " + DemoData.USER_DEVICE_TOKEN)
+            .required(loginUser.required())
+            .description(loginUser.required()
+                ? "요청한 사용자의 기기 토큰 (임시 인증). 데모 사용자: " + DemoData.USER_DEVICE_TOKEN
+                : "선택 헤더. 생략하면 사용자별 상태를 표시하지 않습니다.")
             .example(DemoData.USER_DEVICE_TOKEN)
             .schema(new StringSchema()));
       }
       markCreated(operation, handlerMethod);
       if (!handlerMethod.getMethod().getDeclaringClass().getPackageName().endsWith(".health")) {
-        addErrorResponses(operation, handlerMethod, needsLogin);
+        addErrorResponses(operation, handlerMethod, loginUser);
       }
       return operation;
     };
@@ -144,10 +151,11 @@ public class SwaggerConfig {
     }
   }
 
-  private static void addErrorResponses(Operation operation, HandlerMethod handlerMethod, boolean needsLogin) {
+  private static void addErrorResponses(Operation operation, HandlerMethod handlerMethod, LoginUser loginUser) {
+    boolean requiresToken = loginUser != null && loginUser.required();
     boolean hasPathVariable = Arrays.stream(handlerMethod.getMethodParameters())
         .anyMatch(p -> p.hasParameterAnnotation(org.springframework.web.bind.annotation.PathVariable.class));
-    boolean mutatesOwned = needsLogin && hasPathVariable
+    boolean mutatesOwned = requiresToken && hasPathVariable
         && (handlerMethod.hasMethodAnnotation(org.springframework.web.bind.annotation.PutMapping.class)
         || handlerMethod.hasMethodAnnotation(org.springframework.web.bind.annotation.PatchMapping.class)
         || handlerMethod.hasMethodAnnotation(org.springframework.web.bind.annotation.DeleteMapping.class));
@@ -157,7 +165,7 @@ public class SwaggerConfig {
 
     Map<String, ApiResponse> errors = new LinkedHashMap<>();
     errors.put("400", error("입력값 오류 (COMMON400 등) — result에 필드별 메시지"
-        + (needsLogin ? " / X-Device-Token 헤더 누락" : ""), "COMMON400", "요청 형식이 올바르지 않습니다.",
+        + (requiresToken ? " / X-Device-Token 헤더 누락" : ""), "COMMON400", "요청 형식이 올바르지 않습니다.",
         Map.of("필드명", "오류 메시지")));
     if (mutatesOwned) {
       errors.put("403", domain.contains("Comment")
@@ -167,8 +175,8 @@ public class SwaggerConfig {
     if (domain.contains("User") && handlerMethod.hasMethodAnnotation(PostMapping.class)) {
       errors.put("409", error("이미 가입된 기기 토큰", "COMMON409", "이미 처리된 요청이거나 데이터가 충돌합니다.", null));
     }
-    if (needsLogin || hasPathVariable) {
-      errors.put("404", error("대상 없음 (" + notFoundCode + (needsLogin ? " · 모르는 토큰 USER404" : "") + ")",
+    if (loginUser != null || hasPathVariable) {
+      errors.put("404", error("대상 없음 (" + notFoundCode + (loginUser != null ? " · 모르는 토큰 USER404" : "") + ")",
           notFoundCode.split(" ")[0], "리소스를 찾을 수 없습니다.", null));
     }
     errors.put("500", error("서버 내부 오류", "COMMON500", "서버 내부 오류가 발생했습니다.", null));
