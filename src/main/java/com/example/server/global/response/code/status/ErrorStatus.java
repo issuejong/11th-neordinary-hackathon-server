@@ -20,7 +20,7 @@ public enum ErrorStatus implements BaseCode {
   // 파일 업로드
   _FILE_TOO_LARGE(HttpStatus.BAD_REQUEST, "FILE400", "파일 크기가 허용 한도(파일 10MB, 요청 20MB)를 초과했습니다."),
 
-  // 사용자 (임시 인증: X-User-Id 헤더)
+  // 사용자 (임시 인증: X-Device-Token 헤더)
   USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER404", "사용자를 찾을 수 없습니다."),
 
   // 이미지

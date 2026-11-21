@@ -40,7 +40,7 @@ public class RoutineCommandServiceImpl implements RoutineCommandService {
     User owner = entityManager.getReference(User.class, userId);
     Routine routine = routineRepository.save(
         new Routine(Ulid.generate(), owner, request.title(), request.content()));
-    saveCards(routine, request.cards());
+    saveCards(routine, request.cards(), userId);
     return routineQueryService.getDetail(routine.getPublicId());
   }
 
@@ -51,7 +51,7 @@ public class RoutineCommandServiceImpl implements RoutineCommandService {
     routine.update(request.title(), request.content(), userId);
     cardRepository.deleteAllByRoutineId(routine.getId());
     routine = routineRepository.getReferenceById(routine.getId());
-    saveCards(routine, request.cards());
+    saveCards(routine, request.cards(), userId);
     return routineQueryService.getDetail(routineId);
   }
 
@@ -70,10 +70,10 @@ public class RoutineCommandServiceImpl implements RoutineCommandService {
     return routine;
   }
 
-  /** 카드 이미지를 한 번에 조회(바이너리 제외)하고, 요청 배열 순서대로 sort_order 1..n 으로 저장한다. */
-  private void saveCards(Routine routine, List<RoutineRequestDTO.Card> cards) {
+  /** 카드 이미지(본인 업로드 또는 기본 이미지)를 한 번에 조회(바이너리 제외)하고, 요청 배열 순서대로 sort_order 1..n 으로 저장한다. */
+  private void saveCards(Routine routine, List<RoutineRequestDTO.Card> cards, Long userId) {
     List<String> imageIds = cards.stream().map(RoutineRequestDTO.Card::imageId).distinct().toList();
-    Map<String, Long> imageIdMap = imageRepository.findKeysByPublicIds(imageIds).stream()
+    Map<String, Long> imageIdMap = imageRepository.findUsableKeys(imageIds, userId).stream()
         .collect(Collectors.toMap(ImageKey::publicId, ImageKey::id));
     if (imageIdMap.size() != imageIds.size()) {
       throw new BusinessException(ErrorStatus.IMAGE_NOT_FOUND);

@@ -48,7 +48,7 @@ com.example.server
 | PUT | `/api/v1/routines/{routineId}` | 루틴 수정 (카드 전체 교체), 작성자만 | O |
 | DELETE | `/api/v1/routines/{routineId}` | 루틴 소프트 삭제, 작성자만 | O |
 
-- **임시 인증**: 컨트롤러는 `@LoginUser Long userId`로 사용자를 받고, 지금은 `X-User-Id` 헤더(users.public_id)로 해석합니다(`global/auth/LoginUserArgumentResolver`). 유저 도메인(가입/로그인)이 완성되면 **리졸버만 교체**하고 컨트롤러는 그대로 둡니다. Swagger에는 헤더 입력칸이 자동으로 추가됩니다.
+- **임시 인증**: 컨트롤러는 `@LoginUser Long userId`로 사용자를 받고, 지금은 `X-Device-Token` 헤더(users.device_token)로 해석합니다. publicId는 응답에 노출되므로 인증에 쓰면 안 되고, 기기 토큰은 응답에 절대 넣지 마세요(`global/auth/LoginUserArgumentResolver`). 유저 도메인(가입/로그인)이 완성되면 **리졸버만 교체**하고 컨트롤러는 그대로 둡니다. Swagger에는 헤더 입력칸이 자동으로 추가됩니다.
 - **데모 데이터**: `global/init/DemoDataInitializer`가 시작할 때 기본 이미지 3개, 데모 유저, 루틴 2개를 고정 publicId(`DemoData`)로 넣습니다(이미 있으면 건너뜀). Swagger 예시값이 이 ID를 가리키므로 지우거나 바꾸지 마세요.
 - ID는 `global/util/Ulid.generate()`로 만들고, 경로 변수는 `@Pattern(regexp = Ulid.REGEX)`로 검증합니다(형식 오류는 400).
 - 목록·상세 조회에서 이미지 바이너리(MEDIUMBLOB)를 읽지 않도록 projection(`select new ...View(...)`)으로 조회합니다.

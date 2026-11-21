@@ -32,7 +32,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @ActiveProfiles("test")
 class RoutineImageApiTests {
 
-  private static final String USER = DemoData.USER_ID;
+  private static final String USER = DemoData.USER_DEVICE_TOKEN;
   private static final String UNKNOWN_ID = "01KB0000000000000000ZZZ999";
 
   @Autowired
@@ -112,7 +112,7 @@ class RoutineImageApiTests {
 
     mvc.perform(multipart("/api/v1/images")
             .file(new MockMultipartFile("file", "a.png", "image/png", new byte[] {1}))
-            .header(LoginUser.HEADER, UNKNOWN_ID))
+            .header(LoginUser.HEADER, "unknown-device"))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.code").value("USER404"));
   }
@@ -243,11 +243,11 @@ class RoutineImageApiTests {
   @Test
   void onlyOwnerCanUpdateOrDelete() throws Exception {
     String routineId = createRoutine();
-    String otherUser = "01KB0000000000000000MEM002";
+    String otherUser = "other-device";
     tx.executeWithoutResult(status -> {
       Image image = entityManager.createQuery("from Image i where i.publicId = :p", Image.class)
           .setParameter("p", DemoData.IMAGE_ID).getSingleResult();
-      entityManager.persist(new User(otherUser, "other-device", "다른 유저", image));
+      entityManager.persist(new User("01KB0000000000000000MEM002", otherUser, "다른 유저", image));
     });
 
     mvc.perform(put("/api/v1/routines/" + routineId).header(LoginUser.HEADER, otherUser)
@@ -258,5 +258,26 @@ class RoutineImageApiTests {
 
     mvc.perform(delete("/api/v1/routines/" + routineId).header(LoginUser.HEADER, otherUser))
         .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void cannotUseImageUploadedByAnotherUser() throws Exception {
+    String json = mvc.perform(multipart("/api/v1/images")
+            .file(new MockMultipartFile("file", "a.png", "image/png", new byte[] {1, 2}))
+            .header(LoginUser.HEADER, USER))
+        .andExpect(status().isCreated())
+        .andReturn().getResponse().getContentAsString();
+    String imageId = JsonPath.read(json, "$.result.imageId");
+    tx.executeWithoutResult(status -> {
+      Image image = entityManager.createQuery("from Image i where i.publicId = :p", Image.class)
+          .setParameter("p", DemoData.IMAGE_ID).getSingleResult();
+      entityManager.persist(new User("01KB0000000000000000MEM003", "third-device", "세 번째 유저", image));
+    });
+
+    mvc.perform(post("/api/v1/routines").header(LoginUser.HEADER, "third-device")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(body("루틴", "첫 번째 카드 제목", imageId)))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.code").value("IMAGE404"));
   }
 }

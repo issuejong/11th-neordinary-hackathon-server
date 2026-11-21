@@ -11,7 +11,7 @@ public final class DemoData {
   public static final String IMAGE_ID_2 = "01KB0000000000000000DEF002";
   public static final String IMAGE_ID_3 = "01KB0000000000000000DEF003";
 
-  /** 데모 사용자 (임시 인증 X-User-Id 예시값) */
+  /** 데모 사용자 (USER_DEVICE_TOKEN이 임시 인증 X-Device-Token 예시값) */
   public static final String USER_ID = "01KB0000000000000000MEM001";
   public static final String USER_DEVICE_TOKEN = "demo-device-token";
 

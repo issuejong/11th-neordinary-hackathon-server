@@ -29,13 +29,13 @@ public class SwaggerConfig {
                 NEORDINARY HACKATHON 8조 루틴 공유 서비스 API
 
                 - 모든 응답은 `{ isSuccess, code, message, result }` 형식입니다.
-                - 작성자가 필요한 API는 `X-User-Id` 헤더(사용자 publicId)가 필요합니다. \
+                - 작성자가 필요한 API는 `X-Device-Token` 헤더(기기 토큰)가 필요합니다. \
                 예시 값(데모 사용자)이 미리 채워져 있어 바로 실행할 수 있습니다.
                 """)
             .version("v1"));
   }
 
-  /** @LoginUser 파라미터는 숨기고, 대신 X-User-Id 헤더 입력칸(예시값 포함)을 문서에 추가한다. */
+  /** @LoginUser 파라미터는 숨기고, 대신 X-Device-Token 헤더 입력칸(예시값 포함)을 문서에 추가한다. */
   @Bean
   public OperationCustomizer loginUserHeaderCustomizer() {
     return (operation, handlerMethod) -> {
@@ -45,8 +45,8 @@ public class SwaggerConfig {
         operation.addParametersItem(new HeaderParameter()
             .name(LoginUser.HEADER)
             .required(true)
-            .description("요청한 사용자의 publicId (임시 인증). 데모 사용자: " + DemoData.USER_ID)
-            .example(DemoData.USER_ID)
+            .description("요청한 사용자의 기기 토큰 (임시 인증). 데모 사용자: " + DemoData.USER_DEVICE_TOKEN)
+            .example(DemoData.USER_DEVICE_TOKEN)
             .schema(new StringSchema()));
       }
       return operation;

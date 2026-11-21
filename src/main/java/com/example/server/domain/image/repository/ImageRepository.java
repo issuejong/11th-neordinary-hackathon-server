@@ -14,11 +14,12 @@ public interface ImageRepository extends JpaRepository<Image, Long> {
 
   boolean existsByPublicId(String publicId);
 
-  /** 바이너리(data)를 읽지 않고 id만 조회한다. */
+  /** 본인이 올린 이미지 또는 시스템 기본 이미지(created_by NULL)만, 바이너리(data) 없이 id만 조회한다. */
   @Query("""
       select new com.example.server.domain.image.repository.ImageKey(i.id, i.publicId)
       from Image i
       where i.publicId in :publicIds and i.deletedAt is null
+        and (i.createdBy = :userId or i.createdBy is null)
       """)
-  List<ImageKey> findKeysByPublicIds(@Param("publicIds") Collection<String> publicIds);
+  List<ImageKey> findUsableKeys(@Param("publicIds") Collection<String> publicIds, @Param("userId") Long userId);
 }
