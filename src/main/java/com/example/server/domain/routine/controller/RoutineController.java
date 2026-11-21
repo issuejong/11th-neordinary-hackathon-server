@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "Routine", description = "루틴 생성 · 상세 조회 · 수정 · 삭제")
 @RestController
-@RequestMapping("/api/v1/routines")
+@RequestMapping("/api/routines")
 @RequiredArgsConstructor
 public class RoutineController {
 
@@ -44,7 +44,7 @@ public class RoutineController {
       @Valid @RequestBody RoutineRequestDTO.Save request
   ) {
     RoutineResponseDTO.Detail result = commandService.create(userId, request);
-    return ResponseEntity.created(URI.create("/api/v1/routines/" + result.routineId()))
+    return ResponseEntity.created(URI.create("/api/routines/" + result.routineId()))
         .body(ApiResponse.of(SuccessStatus._CREATED, result));
   }
 

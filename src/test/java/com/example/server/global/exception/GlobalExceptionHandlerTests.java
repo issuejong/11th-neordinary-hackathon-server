@@ -58,7 +58,7 @@ class GlobalExceptionHandlerTests {
 
   @Test
   void malformedJsonReturns400() throws Exception {
-    mvc.perform(post("/api/v1/examples").contentType(MediaType.APPLICATION_JSON).content("{"))
+    mvc.perform(post("/api/examples").contentType(MediaType.APPLICATION_JSON).content("{"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("COMMON400"));
   }

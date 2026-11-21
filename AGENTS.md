@@ -41,12 +41,12 @@ com.example.server
 ## 구현된 API (Swagger 예시값으로 바로 실행 가능)
 | 메서드 | 경로 | 설명 | 인증 헤더 |
 | --- | --- | --- | --- |
-| POST | `/api/v1/images` | 이미지 업로드 (multipart `file`, jpeg/png/heic/heif/webp/gif, 10MB) → 201 | O |
-| GET | `/api/v1/images/{imageId}` | 이미지 바이너리 조회 | — |
-| POST | `/api/v1/routines` | 루틴 생성 (카드 1~10장) → 201 | O |
-| GET | `/api/v1/routines/{routineId}` | 루틴 상세 (작성자, 카드, 좋아요·댓글 수) | — |
-| PUT | `/api/v1/routines/{routineId}` | 루틴 수정 (카드 전체 교체), 작성자만 | O |
-| DELETE | `/api/v1/routines/{routineId}` | 루틴 소프트 삭제, 작성자만 | O |
+| POST | `/api/images` | 이미지 업로드 (multipart `file`, jpeg/png/heic/heif/webp/gif, 10MB) → 201 | O |
+| GET | `/api/images/{imageId}` | 이미지 바이너리 조회 | — |
+| POST | `/api/routines` | 루틴 생성 (카드 1~10장) → 201 | O |
+| GET | `/api/routines/{routineId}` | 루틴 상세 (작성자, 카드, 좋아요·댓글 수) | — |
+| PUT | `/api/routines/{routineId}` | 루틴 수정 (카드 전체 교체), 작성자만 | O |
+| DELETE | `/api/routines/{routineId}` | 루틴 소프트 삭제, 작성자만 | O |
 
 - **임시 인증**: 컨트롤러는 `@LoginUser Long userId`로 사용자를 받고, 지금은 `X-Device-Token` 헤더(users.device_token)로 해석합니다. publicId는 응답에 노출되므로 인증에 쓰면 안 되고, 기기 토큰은 응답에 절대 넣지 마세요(`global/auth/LoginUserArgumentResolver`). 유저 도메인(가입/로그인)이 완성되면 **리졸버만 교체**하고 컨트롤러는 그대로 둡니다. Swagger에는 헤더 입력칸이 자동으로 추가됩니다.
 - **데모 데이터**: `global/init/DemoDataInitializer`가 시작할 때 기본 이미지 3개, 데모 유저, 루틴 2개를 고정 publicId(`DemoData`)로 넣습니다(이미 있으면 건너뜀). Swagger 예시값이 이 ID를 가리키므로 지우거나 바꾸지 마세요.
@@ -56,7 +56,7 @@ com.example.server
 ## 코드 규칙
 - **응답**: 모든 API는 `ApiResponse<T>`로 감쌉니다. 성공은 `ApiResponse.onSuccess(result)`, 생성은 `ResponseEntity.created(...)` + `ApiResponse.of(SuccessStatus._CREATED, result)`.
 - **에러**: `throw new BusinessException(ErrorStatus.XXX)`. 새 에러는 `ErrorStatus` enum에 `HttpStatus`, 코드(`DOMAIN4xx`), 한국어 메시지로 추가합니다.
-- **URL**: `/api/v1/...`. 경로와 응답에는 `id`(BIGINT PK)를 노출하지 않고 `publicId`(ULID, `CHAR(26)`)만 씁니다.
+- **URL**: `/api/...`. 경로와 응답에는 `id`(BIGINT PK)를 노출하지 않고 `publicId`(ULID, `CHAR(26)`)만 씁니다.
 - **엔티티**:
   - 스키마의 기준은 `ERD.md`입니다. 엔티티를 바꾸면 `ERD.md`도 같이 고치세요.
   - `@NoArgsConstructor(access = PROTECTED)`, `@Getter`만 쓰고 `@Setter`는 쓰지 않습니다. 값을 바꿀 때는 의도가 드러나는 메서드를 둡니다.

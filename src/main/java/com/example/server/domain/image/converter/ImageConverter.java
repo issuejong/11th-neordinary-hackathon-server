@@ -9,10 +9,10 @@ public final class ImageConverter {
   private ImageConverter() {
   }
 
-  /** 현재 요청의 호스트 기준 절대 URL (운영: https://neo8.duckdns.org/api/v1/images/{id}) */
+  /** 현재 요청의 호스트 기준 절대 URL (운영: https://neo8.duckdns.org/api/images/{id}) */
   public static String toUrl(String publicId) {
     return ServletUriComponentsBuilder.fromCurrentContextPath()
-        .path("/api/v1/images/{imageId}")
+        .path("/api/images/{imageId}")
         .buildAndExpand(publicId)
         .toUriString();
   }

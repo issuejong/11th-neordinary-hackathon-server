@@ -12,7 +12,7 @@ public class ImageResponseDTO {
       String contentType,
       @Schema(description = "파일 크기(byte)", example = "20480")
       int byteSize,
-      @Schema(description = "이미지 조회 URL", example = "https://neo8.duckdns.org/api/v1/images/01KB0000000000000000DEF001")
+      @Schema(description = "이미지 조회 URL", example = "https://neo8.duckdns.org/api/images/01KB0000000000000000DEF001")
       String imageUrl
   ) {
   }

@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/examples")
+@RequestMapping("/api/examples")
 @RequiredArgsConstructor
 public class ExampleController {
 
@@ -30,7 +30,7 @@ public class ExampleController {
       @Valid @RequestBody ExampleRequestDTO.Create request
   ) {
     ExampleResponseDTO result = commandService.create(request);
-    return ResponseEntity.created(URI.create("/api/v1/examples/" + result.id()))
+    return ResponseEntity.created(URI.create("/api/examples/" + result.id()))
         .body(ApiResponse.of(SuccessStatus._CREATED, result));
   }
 
