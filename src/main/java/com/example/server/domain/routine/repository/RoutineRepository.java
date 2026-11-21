@@ -2,17 +2,24 @@ package com.example.server.domain.routine.repository;
 
 import com.example.server.domain.routine.entity.Routine;
 import com.example.server.domain.routine.repository.projection.RoutineHeaderView;
+import com.example.server.domain.routine.repository.projection.RoutineInteractionView;
 import com.example.server.domain.routine.repository.projection.RoutineSummaryView;
+import jakarta.persistence.LockModeType;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface RoutineRepository extends JpaRepository<Routine, Long> {
 
   Optional<Routine> findByPublicIdAndDeletedAtIsNull(String publicId);
+
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("from Routine r where r.publicId = :publicId and r.deletedAt is null")
+  Optional<Routine> findActiveForUpdate(@Param("publicId") String publicId);
 
   boolean existsByPublicId(String publicId);
 
@@ -29,6 +36,21 @@ public interface RoutineRepository extends JpaRepository<Routine, Long> {
       where r.publicId = :publicId and r.deletedAt is null
       """)
   Optional<RoutineHeaderView> findHeader(@Param("publicId") String publicId);
+
+  @Query("""
+      select new com.example.server.domain.routine.repository.projection.RoutineInteractionView(
+          (select count(l) from RoutineLike l where l.routine = r and l.deletedAt is null),
+          (select count(l) from RoutineLike l where l.routine = r and l.user.id = :userId and l.deletedAt is null),
+          (select count(p) from RoutineParticipation p
+           where p.routine = r and p.status = IN_PROGRESS and p.deletedAt is null),
+          (select count(p) from RoutineParticipation p
+           where p.routine = r and p.status = COMPLETED and p.deletedAt is null),
+          (select p.status from RoutineParticipation p
+           where p.routine = r and p.user.id = :userId and p.deletedAt is null))
+      from Routine r
+      where r.publicId = :publicId and r.deletedAt is null
+      """)
+  Optional<RoutineInteractionView> findInteractions(@Param("publicId") String publicId, @Param("userId") Long userId);
 
   // ---------- 목록: 커서(키셋) 페이지네이션 ----------
   // 삭제되지 않은 루틴만. authorId(작성자 publicId)가 있으면 그 사람 루틴만 (마이페이지 내 루틴).

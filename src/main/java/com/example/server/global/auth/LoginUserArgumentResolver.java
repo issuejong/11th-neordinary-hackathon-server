@@ -33,6 +33,10 @@ public class LoginUserArgumentResolver implements HandlerMethodArgumentResolver 
   public Long resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
       NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
     String deviceToken = webRequest.getHeader(LoginUser.HEADER);
+    LoginUser loginUser = parameter.getParameterAnnotation(LoginUser.class);
+    if (deviceToken == null && loginUser != null && !loginUser.required()) {
+      return null;
+    }
     if (deviceToken == null || deviceToken.isBlank()) {
       throw new MissingRequestHeaderException(LoginUser.HEADER, parameter);
     }

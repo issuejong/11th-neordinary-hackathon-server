@@ -16,14 +16,14 @@ public interface UserRepository extends JpaRepository<User, Long> {
   boolean existsByDeviceToken(String deviceToken);
 
   @Query("""
-      select new com.example.server.domain.user.dto.UserResponseDTO(u.publicId, u.nickname, i.publicId)
+      select new com.example.server.domain.user.dto.UserResponseDTO(u.publicId, u.nickname, i.publicId, u.bio)
       from AppUser u join u.profileImage i
       where u.deviceToken = :deviceToken and u.deletedAt is null
       """)
   List<UserResponseDTO> findActiveProfilesByDeviceToken(@Param("deviceToken") String deviceToken);
 
   @Query("""
-      select new com.example.server.domain.user.dto.UserResponseDTO(u.publicId, u.nickname, i.publicId)
+      select new com.example.server.domain.user.dto.UserResponseDTO(u.publicId, u.nickname, i.publicId, u.bio)
       from AppUser u join u.profileImage i
       where u.id = :userId and u.deletedAt is null
       """)

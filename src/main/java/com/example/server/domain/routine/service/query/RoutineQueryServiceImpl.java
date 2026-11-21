@@ -42,6 +42,14 @@ public class RoutineQueryServiceImpl implements RoutineQueryService {
 
   @Override
   @Transactional(readOnly = true)
+  public RoutineResponseDTO.Interactions getInteractions(Long userId, String routineId) {
+    return routineRepository.findInteractions(routineId, userId)
+        .map(RoutineConverter::toInteractions)
+        .orElseThrow(() -> new BusinessException(ErrorStatus.ROUTINE_NOT_FOUND));
+  }
+
+  @Override
+  @Transactional(readOnly = true)
   public RoutineResponseDTO.Page getList(RoutineSort sort, String authorId, String cursor, int size) {
     RoutineCursor from = RoutineCursor.decode(cursor, sort);
     Pageable limit = PageRequest.of(0, size + 1); // 한 개 더 조회해서 다음 페이지 여부 판단
