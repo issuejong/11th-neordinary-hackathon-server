@@ -37,6 +37,17 @@ class UlidTests {
   }
 
   @Test
+  @DisplayName("단조 증가: 같은 밀리초에 연속 생성해도 생성 순서대로 정렬된다")
+  void monotonic() {
+    String prev = Ulid.generate();
+    for (int i = 0; i < 10_000; i++) {
+      String next = Ulid.generate();
+      assertThat(next).isGreaterThan(prev);
+      prev = next;
+    }
+  }
+
+  @Test
   @DisplayName("시간 부분이 현재 시각을 정확히 인코딩한다")
   void encodesCurrentTime() {
     long before = System.currentTimeMillis();
