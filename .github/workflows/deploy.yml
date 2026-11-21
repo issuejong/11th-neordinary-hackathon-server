@@ -72,10 +72,11 @@ jobs:
             --cpu=1 --memory=1Gi --cpu-boost \
             --min-instances=1 --max-instances=2 \
             --port=8080 \
+            --ingress=internal-and-cloud-load-balancing \
             --allow-unauthenticated \
             --quiet
 
       - name: Smoke test
         run: |
-          URL=$(gcloud run services describe $SERVICE --region=$REGION --format='value(status.url)')
-          curl -fsS --retry 5 --retry-delay 5 "$URL/health"
+          # run.app 직접 접근은 차단(ingress=LB 전용)이므로 도메인으로 확인
+          curl -fsS --retry 5 --retry-delay 5 https://neo8.duckdns.org/health

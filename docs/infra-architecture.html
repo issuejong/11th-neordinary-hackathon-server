@@ -133,7 +133,7 @@
     <li>Spring Boot 4.1 · Java 25 (Docker)</li>
     <li>min 1 / max 2 인스턴스 (상시 가동)</li>
     <li>1 vCPU · 1 GiB · 컨테이너 :8080</li>
-    <li>전용 런타임 서비스 계정</li>
+    <li>Ingress: <b>내부 + LB만 허용</b> (run.app 차단)</li>
     <li>Direct VPC egress → 사설 대역</li>
   </ul>
 </div>
@@ -222,7 +222,7 @@
   <div class="lt">보안 설정 요약</div>
   <div class="grid">
     <div class="it"><span class="n">1</span><div><b>HTTPS 적용</b> — LB에서 Google 관리형 인증서로 TLS 종단, HTTP(80)는 301로 HTTPS 강제</div></div>
-    <div class="it"><span class="n">2</span><div><b>방화벽</b> — 외부 공개는 LB 80·443뿐. VPC의 SSH(22)·RDP(3389)·ICMP 전체 허용 규칙 삭제, VM 없음</div></div>
+    <div class="it"><span class="n">2</span><div><b>방화벽</b> — 외부 공개는 LB 80·443뿐(Cloud Run 직접 접근 차단). VPC의 SSH(22)·RDP(3389)·ICMP 전체 허용 규칙 삭제, VM 없음</div></div>
     <div class="it"><span class="n">3</span><div><b>DB 포트 비노출</b> — Cloud SQL Public IP 미할당, 3306은 VPC 사설망(Cloud Run Direct VPC egress)에서만 접근</div></div>
     <div class="it"><span class="n">4</span><div><b>민감정보 관리</b> — DB 접속정보는 Secret Manager, CI는 WIF 키리스 인증. 레포·이미지·GitHub Secrets에 비밀값 없음</div></div>
     <div class="it"><span class="n">5</span><div><b>WAS / DB 분리</b> — WAS는 Cloud Run, DB는 관리형 Cloud SQL로 분리. 서비스 계정 최소 권한 분리 (런타임 / 배포)</div></div>
