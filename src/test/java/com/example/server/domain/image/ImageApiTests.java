@@ -29,6 +29,23 @@ import org.springframework.mock.web.MockMultipartFile;
 
 class ImageApiTests extends ApiTestSupport {
 
+  @Test
+  void stepUploadRejectsOversizedAndUnsupportedImages() throws Exception {
+    String auth = authorization(DEMO_USER_ID);
+    byte[] large = TestImages.padTo(TestImages.png(), 5 * 1024 * 1024 + 1);
+    mvc.perform(multipart("/api/images/step")
+            .file(new MockMultipartFile("file", "step.png", "image/png", large))
+            .header(LoginUser.HEADER, auth))
+        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("IMAGE4006"));
+    mvc.perform(multipart("/api/images/step")
+            .file(new MockMultipartFile("file", "step.webp", "image/webp", TestImages.webp(4, 3)))
+            .header(LoginUser.HEADER, auth))
+        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("IMAGE4007"));
+    mvc.perform(multipart("/api/images/step")
+            .file(new MockMultipartFile("file", "step.png", "image/png", TestImages.png()))
+            .header(LoginUser.HEADER, auth)).andExpect(status().isCreated());
+  }
+
   @Nested
   @DisplayName("POST /api/images 이미지 업로드")
   class Upload {

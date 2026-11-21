@@ -38,6 +38,8 @@ public enum ErrorStatus implements BaseCode {
   IMAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "IMAGE404", "이미지를 찾을 수 없습니다."),
 
   // 루틴
+  STEP_IMAGE_TOO_LARGE(HttpStatus.BAD_REQUEST, "IMAGE4006", "스텝 이미지는 최대 5MB입니다."),
+  STEP_IMAGE_UNSUPPORTED_TYPE(HttpStatus.BAD_REQUEST, "IMAGE4007", "스텝 이미지는 JPEG, PNG, HEIC, HEIF만 지원합니다."),
   ROUTINE_INVALID_CURSOR(HttpStatus.BAD_REQUEST, "ROUTINE4001", "잘못된 커서입니다. 이전 응답의 nextCursor를 같은 sort와 함께 보내 주세요."),
   ROUTINE_FORBIDDEN(HttpStatus.FORBIDDEN, "ROUTINE403", "루틴 작성자만 수정하거나 삭제할 수 있습니다."),
   ROUTINE_NOT_FOUND(HttpStatus.NOT_FOUND, "ROUTINE404", "루틴을 찾을 수 없습니다."),

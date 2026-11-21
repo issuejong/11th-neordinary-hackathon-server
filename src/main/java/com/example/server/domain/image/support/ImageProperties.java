@@ -15,6 +15,7 @@ import org.springframework.util.unit.DataSize;
 public record ImageProperties(
     @DefaultValue("8192") int maxDimension,
     @DefaultValue("30d") Duration cacheMaxAge,
-    @DefaultValue("5MB") DataSize profileMaxSize
+    @DefaultValue("5MB") DataSize profileMaxSize,
+    @DefaultValue("5MB") DataSize stepMaxSize
 ) {
 }

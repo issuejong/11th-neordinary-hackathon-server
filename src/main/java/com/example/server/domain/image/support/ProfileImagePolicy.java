@@ -25,4 +25,16 @@ public class ProfileImagePolicy {
       throw new BusinessException(ErrorStatus.PROFILE_IMAGE_UNSUPPORTED_TYPE);
     }
   }
+
+  public void validateStepSize(long bytes) {
+    if (bytes > imageProperties.stepMaxSize().toBytes()) {
+      throw new BusinessException(ErrorStatus.STEP_IMAGE_TOO_LARGE);
+    }
+  }
+
+  public void validateStepType(String contentType) {
+    if (!TYPES.contains(contentType)) {
+      throw new BusinessException(ErrorStatus.STEP_IMAGE_UNSUPPORTED_TYPE);
+    }
+  }
 }

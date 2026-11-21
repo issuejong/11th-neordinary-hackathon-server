@@ -35,26 +35,31 @@ public class ImageCommandServiceImpl implements ImageCommandService {
   @Override
   @Transactional
   public ImageResponseDTO.Upload upload(Long userId, MultipartFile file) {
-    return upload(userId, file, false);
+    return upload(userId, file, info -> {});
   }
 
   @Override
   @Transactional
   public ImageResponseDTO.Upload uploadProfile(Long userId, MultipartFile file) {
     profileImagePolicy.validateSize(file.getSize());
-    return upload(userId, file, true);
+    return upload(userId, file, profileImagePolicy::validateType);
   }
 
-  private ImageResponseDTO.Upload upload(Long userId, MultipartFile file, boolean profile) {
+  @Override
+  @Transactional
+  public ImageResponseDTO.Upload uploadStep(Long userId, MultipartFile file) {
+    profileImagePolicy.validateStepSize(file.getSize());
+    return upload(userId, file, profileImagePolicy::validateStepType);
+  }
+
+  private ImageResponseDTO.Upload upload(Long userId, MultipartFile file, java.util.function.Consumer<String> validateType) {
     if (file.isEmpty()) {
       throw new BusinessException(ErrorStatus.IMAGE_EMPTY);
     }
     byte[] data = readBytes(file);
     ImageInfo info = ImageInspector.inspect(data)
         .orElseThrow(() -> new BusinessException(ErrorStatus.IMAGE_UNSUPPORTED_TYPE));
-    if (profile) {
-      profileImagePolicy.validateType(info.contentType());
-    }
+    validateType.accept(info.contentType());
     int max = imageProperties.maxDimension();
     if (info.width() > max || info.height() > max) {
       throw new BusinessException(ErrorStatus.IMAGE_TOO_LARGE_DIMENSION);

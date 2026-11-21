@@ -54,7 +54,7 @@ public class RoutineRequestDTO {
       @Schema(description = "시간 (필수, HH:mm)", type = "string", pattern = "HH:mm", example = "07:00",
           requiredMode = Schema.RequiredMode.REQUIRED)
       @NotNull(message = "시간은 필수입니다.")
-      @JsonFormat(pattern = "HH:mm")
+      @JsonFormat(pattern = "HH:mm", lenient = com.fasterxml.jackson.annotation.OptBoolean.FALSE)
       LocalTime time
   ) {
   }
