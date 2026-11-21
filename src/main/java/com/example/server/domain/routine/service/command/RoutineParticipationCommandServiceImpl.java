@@ -47,7 +47,7 @@ public class RoutineParticipationCommandServiceImpl implements RoutineParticipat
           if (participation.getStatus() == Status.COMPLETED) {
             throw new BusinessException(ErrorStatus.PARTICIPATION_INVALID_STATE);
           }
-          participation.markDeleted(userId, LocalDateTime.now());
+          participation.discard(LocalDateTime.now());
         });
     return routineQueryService.getInteractions(userId, routineId);
   }
@@ -59,6 +59,9 @@ public class RoutineParticipationCommandServiceImpl implements RoutineParticipat
         .filter(existing -> existing.getDeletedAt() == null)
         .orElseThrow(() -> new BusinessException(ErrorStatus.PARTICIPATION_INVALID_STATE));
     if (participation.getStatus() == Status.IN_PROGRESS) {
+      if (participation.getWorkJson() != null) {
+        throw new BusinessException(ErrorStatus.PARTICIPATION_WORK_REQUIRED);
+      }
       participation.complete(LocalDateTime.now());
     }
     return routineQueryService.getInteractions(userId, routineId);

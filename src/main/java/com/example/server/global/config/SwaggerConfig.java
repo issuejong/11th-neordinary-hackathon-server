@@ -162,7 +162,8 @@ public class SwaggerConfig {
     String domain = handlerMethod.getBeanType().getSimpleName();
     boolean testAccount = domain.equals("TestAccountController");
     String action = handlerMethod.getMethod().getName();
-    String notFoundCode = testAccount ? "TEST404" : domain.contains("Comment") ? "COMMENT404 · ROUTINE404"
+    boolean participationResult = domain.equals("ParticipationResultController");
+    String notFoundCode = participationResult ? "PARTICIPATION404 · ROUTINE404" : testAccount ? "TEST404" : domain.contains("Comment") ? "COMMENT404 · ROUTINE404"
         : domain.contains("Routine") ? "ROUTINE404" : domain.contains("Image") ? "IMAGE404" : "USER404";
     boolean updatesProfile = domain.equals("UserController")
         && handlerMethod.hasMethodAnnotation(org.springframework.web.bind.annotation.PatchMapping.class);
@@ -177,6 +178,9 @@ public class SwaggerConfig {
     }
     if (changesParticipation) {
       ErrorStatus forbidden = ErrorStatus.PARTICIPATION_OWNER_FORBIDDEN;
+      errors.put("403", error(forbidden.getMessage(), forbidden.getCode(), forbidden.getMessage(), null));
+    } else if (participationResult && mutatesOwned) {
+      ErrorStatus forbidden = ErrorStatus.PARTICIPATION_RESULT_FORBIDDEN;
       errors.put("403", error(forbidden.getMessage(), forbidden.getCode(), forbidden.getMessage(), null));
     } else if (mutatesOwned) {
       errors.put("403", domain.contains("Comment")
