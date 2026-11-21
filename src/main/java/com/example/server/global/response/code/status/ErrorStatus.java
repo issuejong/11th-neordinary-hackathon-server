@@ -32,7 +32,11 @@ public enum ErrorStatus implements BaseCode {
   // 루틴
   ROUTINE_INVALID_CURSOR(HttpStatus.BAD_REQUEST, "ROUTINE4001", "잘못된 커서입니다. 이전 응답의 nextCursor를 같은 sort와 함께 보내 주세요."),
   ROUTINE_FORBIDDEN(HttpStatus.FORBIDDEN, "ROUTINE403", "루틴 작성자만 수정하거나 삭제할 수 있습니다."),
-  ROUTINE_NOT_FOUND(HttpStatus.NOT_FOUND, "ROUTINE404", "루틴을 찾을 수 없습니다.");
+  ROUTINE_NOT_FOUND(HttpStatus.NOT_FOUND, "ROUTINE404", "루틴을 찾을 수 없습니다."),
+
+  // 댓글
+  COMMENT_FORBIDDEN(HttpStatus.FORBIDDEN, "COMMENT403", "댓글 작성자만 수정하거나 삭제할 수 있습니다."),
+  COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "COMMENT404", "댓글을 찾을 수 없습니다.");
 
   private final HttpStatus httpStatus;
   private final String code;
