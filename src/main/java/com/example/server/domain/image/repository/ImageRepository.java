@@ -22,4 +22,12 @@ public interface ImageRepository extends JpaRepository<Image, Long> {
         and (i.createdBy = :userId or i.createdBy is null)
       """)
   List<ImageKey> findUsableKeys(@Param("publicIds") Collection<String> publicIds, @Param("userId") Long userId);
+
+  @Query("""
+      select new com.example.server.domain.image.repository.ProfileImageView(i.id, i.contentType, i.byteSize)
+      from Image i
+      where i.publicId = :publicId and i.deletedAt is null
+        and (i.createdBy = :userId or i.createdBy is null)
+      """)
+  Optional<ProfileImageView> findUsableProfileImage(@Param("publicId") String publicId, @Param("userId") Long userId);
 }

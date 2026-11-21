@@ -49,7 +49,7 @@ com.example.server
 | PUT | `/api/routines/{routineId}` | 루틴 수정 (카드 전체 교체), 작성자만 | O |
 | DELETE | `/api/routines/{routineId}` | 루틴 소프트 삭제, 작성자만 | O |
 
-- **임시 인증**: 컨트롤러는 `@LoginUser Long userId`로 사용자를 받고, 지금은 `X-Device-Token` 헤더(users.device_token)로 해석합니다. publicId는 응답에 노출되므로 인증에 쓰면 안 되고, 기기 토큰은 응답에 절대 넣지 마세요(`global/auth/LoginUserArgumentResolver`). 유저 도메인(가입/로그인)이 완성되면 **리졸버만 교체**하고 컨트롤러는 그대로 둡니다. Swagger에는 헤더 입력칸이 자동으로 추가됩니다.
+- **임시 인증**: 컨트롤러는 `@LoginUser Long userId`로 사용자를 받습니다. `X-Device-Token`으로 기기를 확인하고 `X-User-Id`(사용자 publicId)로 그 기기의 프로필을 선택합니다. 활성 프로필이 한 개면 사용자 ID를 생략할 수 있습니다. 기기 토큰을 응답에 넣지 마세요. Swagger에는 헤더 입력칸이 자동으로 추가됩니다.
 - **데모 데이터**: `global/init/DemoDataInitializer`가 시작할 때 기본 이미지 3개, 데모 유저, 루틴 3개(상세 · 수정 · 삭제 예시용), 댓글 2개(수정 · 삭제 예시용)를 고정 publicId(`DemoData`)로 넣습니다(이미 있으면 건너뜀). Swagger 예시값이 이 ID를 가리키므로 지우거나 바꾸지 마세요.
   - 심사자가 삭제 예시를 실행해도 **1분마다 자동 복구**됩니다(`restoreDeletedDemoData`, `app.demo.restore-interval`).
   - 수정 예시와 삭제 예시는 서로 다른 데이터를 가리키게 하세요(삭제 후 수정 예시가 404가 되지 않도록).

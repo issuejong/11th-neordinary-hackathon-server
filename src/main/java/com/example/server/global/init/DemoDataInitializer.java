@@ -5,8 +5,10 @@ import com.example.server.domain.image.repository.ImageRepository;
 import com.example.server.domain.routine.entity.Routine;
 import com.example.server.domain.routine.entity.RoutineCard;
 import com.example.server.domain.routine.entity.RoutineComment;
+import com.example.server.domain.routine.entity.RoutineParticipation;
 import com.example.server.domain.routine.repository.RoutineCardRepository;
 import com.example.server.domain.routine.repository.RoutineCommentRepository;
+import com.example.server.domain.routine.repository.RoutineParticipationRepository;
 import com.example.server.domain.routine.repository.RoutineRepository;
 import com.example.server.domain.user.entity.User;
 import com.example.server.global.util.Ulid;
@@ -17,6 +19,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import javax.imageio.ImageIO;
@@ -41,6 +44,7 @@ public class DemoDataInitializer implements ApplicationRunner {
   private final RoutineRepository routineRepository;
   private final RoutineCardRepository cardRepository;
   private final RoutineCommentRepository commentRepository;
+  private final RoutineParticipationRepository participationRepository;
   private final EntityManager entityManager;
 
   @Override
@@ -50,7 +54,8 @@ public class DemoDataInitializer implements ApplicationRunner {
     Image image2 = defaultImage(DemoData.IMAGE_ID_2, new Color(0x8E, 0xC5, 0xFC));
     Image image3 = defaultImage(DemoData.IMAGE_ID_3, new Color(0xA7, 0xE3, 0xB5));
 
-    User user = demoUser(image1);
+    User user = demoUser(DemoData.USER_ID, DemoData.USER_DEVICE_TOKEN, "데모 유저", image1);
+    User participant = demoUser(DemoData.PARTICIPANT_ID, DemoData.PARTICIPANT_DEVICE_TOKEN, "데모 참여자", image2);
 
     if (!routineRepository.existsByPublicId(DemoData.ROUTINE_ID)) {
       Routine routine = routineRepository.save(
@@ -86,6 +91,11 @@ public class DemoDataInitializer implements ApplicationRunner {
               new RoutineComment(DemoData.COMMENT_ID, routine, user, "오늘부터 해볼게요.")));
     }
     restoreDeletedDemoData(); // 재배포 직후에도 바로 복구
+    routineRepository.findByPublicIdAndDeletedAtIsNull(DemoData.ROUTINE_ID).ifPresent(routine -> {
+      if (participationRepository.findByRoutine_IdAndUser_Id(routine.getId(), participant.getId()).isEmpty()) {
+        participationRepository.save(new RoutineParticipation(routine, participant, LocalDateTime.now()));
+      }
+    });
   }
 
   /**
@@ -118,15 +128,15 @@ public class DemoDataInitializer implements ApplicationRunner {
         .orElseGet(() -> imageRepository.save(new Image(publicId, "image/png", solidPng(color), null)));
   }
 
-  private User demoUser(Image profileImage) {
+  private User demoUser(String publicId, String deviceToken, String nickname, Image profileImage) {
     List<User> users = entityManager
         .createQuery("from AppUser u where u.publicId = :publicId", User.class)
-        .setParameter("publicId", DemoData.USER_ID)
+        .setParameter("publicId", publicId)
         .getResultList();
     if (!users.isEmpty()) {
       return users.getFirst();
     }
-    User user = new User(DemoData.USER_ID, DemoData.USER_DEVICE_TOKEN, "데모 유저", profileImage);
+    User user = new User(publicId, deviceToken, nickname, profileImage);
     entityManager.persist(user);
     return user;
   }
