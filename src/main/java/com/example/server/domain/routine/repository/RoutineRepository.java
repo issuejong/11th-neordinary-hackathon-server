@@ -4,16 +4,22 @@ import com.example.server.domain.routine.entity.Routine;
 import com.example.server.domain.routine.repository.projection.RoutineHeaderView;
 import com.example.server.domain.routine.repository.projection.RoutineInteractionView;
 import com.example.server.domain.routine.repository.projection.RoutineSummaryView;
+import jakarta.persistence.LockModeType;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface RoutineRepository extends JpaRepository<Routine, Long> {
 
   Optional<Routine> findByPublicIdAndDeletedAtIsNull(String publicId);
+
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("from Routine r where r.publicId = :publicId and r.deletedAt is null")
+  Optional<Routine> findActiveForUpdate(@Param("publicId") String publicId);
 
   boolean existsByPublicId(String publicId);
 
