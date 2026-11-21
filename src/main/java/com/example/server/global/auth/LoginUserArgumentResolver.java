@@ -1,9 +1,8 @@
 package com.example.server.global.auth;
 
+import com.example.server.domain.user.repository.UserRepository;
 import com.example.server.global.exception.BusinessException;
 import com.example.server.global.response.code.status.ErrorStatus;
-import jakarta.persistence.EntityManager;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.MethodParameter;
 import org.springframework.stereotype.Component;
@@ -22,7 +21,7 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 @RequiredArgsConstructor
 public class LoginUserArgumentResolver implements HandlerMethodArgumentResolver {
 
-  private final EntityManager entityManager;
+  private final UserRepository userRepository;
 
   @Override
   public boolean supportsParameter(MethodParameter parameter) {
@@ -40,13 +39,7 @@ public class LoginUserArgumentResolver implements HandlerMethodArgumentResolver 
     if (deviceToken.length() > 255) {
       throw new BusinessException(ErrorStatus._BAD_REQUEST);
     }
-    List<Long> ids = entityManager.createQuery(
-            "select u.id from AppUser u where u.deviceToken = :deviceToken and u.deletedAt is null", Long.class)
-        .setParameter("deviceToken", deviceToken)
-        .getResultList();
-    if (ids.isEmpty()) {
-      throw new BusinessException(ErrorStatus.USER_NOT_FOUND);
-    }
-    return ids.getFirst();
+    return userRepository.findActiveIdByDeviceToken(deviceToken)
+        .orElseThrow(() -> new BusinessException(ErrorStatus.USER_NOT_FOUND));
   }
 }
