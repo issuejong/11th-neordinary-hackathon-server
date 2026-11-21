@@ -19,19 +19,19 @@ public final class Ulid {
   private static long lastLo;
 
   /**
-   * 단조 증가 ULID: 같은 밀리초 안에서는 직전 값의 랜덤부를 1 올려서, 생성 순서 = 정렬 순서가 되게 한다.
-   * (루틴 목록 최신순 · 커서가 publicId 순서를 쓰므로 필요)
+   * 단조 증가 ULID: 같은 밀리초 안에서는 직전 랜덤부에 SecureRandom 증가분(1 ~ 2^32)을 더해서
+   * 생성 순서 = 정렬 순서를 지키면서도 다음 ID를 추측할 수 없게 한다.
+   * (+1 증가는 ID 하나로 이웃 ID를 알 수 있어, ID만으로 열리는 이미지 조회 등에서 위험)
+   * 루틴 목록 최신순 · 커서가 publicId 순서를 쓰므로 단조성이 필요하다.
    */
   public static synchronized String generate() {
     long time = Math.max(System.currentTimeMillis(), lastTime);
     long hi;
     long lo;
     if (time == lastTime) {
-      hi = lastHi;
-      lo = (lastLo + 1) & MASK_40;
-      if (lo == 0) {
-        hi = (hi + 1) & MASK_40;
-      }
+      long sum = lastLo + 1 + (RANDOM.nextLong() & 0xFFFF_FFFFL); // 1 ~ 2^32
+      hi = (lastHi + (sum >>> 40)) & MASK_40;
+      lo = sum & MASK_40;
     } else {
       byte[] random = new byte[10];
       RANDOM.nextBytes(random);
