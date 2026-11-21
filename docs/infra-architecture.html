@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>NEORDINARY HACKATHON 8조 · 인프라 구성도</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    width: 1600px; height: 1120px; position: relative; overflow: hidden;
+    background: #f7f8fa; color: #1f2937;
+    font-family: "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", sans-serif;
+  }
+  .abs { position: absolute; }
+  h1 { position: absolute; left: 40px; top: 28px; font-size: 30px; font-weight: 800; letter-spacing: -0.5px; }
+  .sub { position: absolute; left: 42px; top: 72px; font-size: 15px; color: #6b7280; }
+
+  .zone { position: absolute; border-radius: 14px; }
+  .zone > .zlabel { position: absolute; top: -12px; left: 16px; padding: 2px 10px; font-size: 13px; font-weight: 700; border-radius: 6px; }
+  .gcp { border: 2px solid #4285f4; background: #ffffff; }
+  .gcp > .zlabel { background: #4285f4; color: #fff; }
+  .region { border: 2px dashed #93b4f5; background: #f5f8ff; }
+  .region > .zlabel { background: #e8f0fe; color: #1a56c9; border: 1px solid #93b4f5; }
+  .vpc { border: 2px solid #34a853; background: #f1faf3; }
+  .vpc > .zlabel { background: #34a853; color: #fff; }
+  .cicd { border: 2px solid #6b7280; background: #ffffff; }
+  .cicd > .zlabel { background: #374151; color: #fff; }
+
+  .box {
+    position: absolute; background: #fff; border: 1.5px solid #d1d5db; border-radius: 12px;
+    padding: 12px 14px; box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+  .box .t { font-size: 16px; font-weight: 800; margin-bottom: 2px; display: flex; align-items: center; gap: 8px; }
+  .box .s { font-size: 12px; color: #6b7280; margin-bottom: 6px; }
+  .box ul { list-style: none; font-size: 12.5px; line-height: 1.55; }
+  .box li::before { content: "· "; color: #9ca3af; }
+  .ic { width: 26px; height: 26px; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: 800; flex: none; }
+  .k { font-family: "SF Mono", Menlo, monospace; font-size: 11.5px; background: #f3f4f6; padding: 0 4px; border-radius: 4px; }
+
+  .lb   { border-color: #4285f4; }
+  .run  { border-color: #4285f4; border-width: 2px; }
+  .sql  { border-color: #34a853; border-width: 2px; }
+  .sec  { border-color: #f59e0b; }
+
+  .badge {
+    position: absolute; width: 24px; height: 24px; border-radius: 50%; background: #dc2626; color: #fff;
+    font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 0 3px #fff;
+  }
+  .elabel { position: absolute; font-size: 12px; font-weight: 700; color: #374151; background: #f7f8fa; padding: 1px 6px; border-radius: 4px; white-space: nowrap; }
+  .elabel.w { background: #fff; }
+  .elabel.g { background: #f1faf3; color: #1e7b3a; }
+  .elabel.b { background: #f5f8ff; }
+
+  .legend { position: absolute; left: 40px; top: 958px; width: 1520px; height: 136px; background: #fff; border: 1.5px solid #e5e7eb; border-radius: 12px; padding: 14px 18px; }
+  .legend .lt { font-size: 15px; font-weight: 800; margin-bottom: 8px; }
+  .legend .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px 26px; font-size: 12.5px; line-height: 1.5; }
+  .legend .it { display: flex; gap: 8px; align-items: flex-start; }
+  .legend .n { flex: none; width: 20px; height: 20px; border-radius: 50%; background: #dc2626; color: #fff; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+</style>
+</head>
+<body>
+
+<h1>NEORDINARY HACKATHON 8조 · 인프라 구성도</h1>
+<div class="sub">Spring Boot 4.1 (Java 25) · Google Cloud (asia-northeast3 서울) · GitHub Actions CI/CD &nbsp;|&nbsp; https://neo8.duckdns.org</div>
+
+<!-- ===== Zones ===== -->
+<div class="zone gcp" style="left:290px; top:120px; width:1270px; height:600px;"><div class="zlabel">Google Cloud · 프로젝트 neordinary-hk-55oqn</div></div>
+<div class="zone region" style="left:600px; top:160px; width:940px; height:540px;"><div class="zlabel">Region · asia-northeast3 (서울)</div></div>
+<div class="zone vpc" style="left:940px; top:200px; width:580px; height:260px;"><div class="zlabel">VPC default · subnet 10.178.0.0/20</div></div>
+<div class="zone cicd" style="left:40px; top:752px; width:1520px; height:182px;"><div class="zlabel">CI/CD · GitHub Actions (Workload Identity Federation, 키 파일 없음)</div></div>
+
+<!-- ===== Arrows (SVG overlay) ===== -->
+<svg class="abs" style="left:0; top:0;" width="1600" height="1120">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#374151"/></marker>
+    <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1e7b3a"/></marker>
+    <marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b45309"/></marker>
+    <marker id="ap" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6d28d9"/></marker>
+  </defs>
+  <!-- client -> LB -->
+  <line x1="250" y1="300" x2="316" y2="300" stroke="#374151" stroke-width="2.5" marker-end="url(#a)"/>
+  <!-- client -> DNS (lookup) -->
+  <line x1="145" y1="388" x2="145" y2="452" stroke="#9ca3af" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#a)"/>
+  <!-- LB -> Cloud Run -->
+  <line x1="566" y1="300" x2="626" y2="300" stroke="#374151" stroke-width="2.5" marker-end="url(#a)"/>
+  <!-- Cloud Run -> Cloud SQL -->
+  <line x1="906" y1="320" x2="1206" y2="320" stroke="#1e7b3a" stroke-width="2.5" marker-end="url(#ag)"/>
+  <!-- Secret Manager -> Cloud Run -->
+  <line x1="765" y1="526" x2="765" y2="446" stroke="#b45309" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#ao)"/>
+  <!-- Artifact Registry -> Cloud Run -->
+  <path d="M 1060 526 L 1060 490 L 860 490 L 860 446" fill="none" stroke="#6d28d9" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#ap)"/>
+  <!-- CI/CD -->
+  <line x1="236" y1="845" x2="290" y2="845" stroke="#374151" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="566" y1="845" x2="620" y2="845" stroke="#374151" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="1036" y1="845" x2="1090" y2="845" stroke="#374151" stroke-width="2" marker-end="url(#a)"/>
+  <!-- Actions -> Artifact Registry (push) -->
+  <path d="M 1000 790 L 1000 730 L 1060 730 L 1060 666" fill="none" stroke="#6d28d9" stroke-width="2" marker-end="url(#ap)"/>
+  <!-- WIF -> Cloud Run (deploy) -->
+  <path d="M 926 790 L 926 420 L 912 420" fill="none" stroke="#374151" stroke-width="2" stroke-dasharray="3 4" marker-end="url(#a)"/>
+</svg>
+
+<!-- ===== Nodes ===== -->
+<div class="box" style="left:40px; top:212px; width:210px; height:176px;">
+  <div class="t"><span class="ic" style="background:#111827">U</span>사용자 / 프론트엔드</div>
+  <div class="s">웹 · 모바일 클라이언트</div>
+  <ul><li>HTTPS로만 API 호출</li><li><span class="k">neo8.duckdns.org</span></li></ul>
+</div>
+
+<div class="box" style="left:40px; top:456px; width:210px; height:118px;">
+  <div class="t"><span class="ic" style="background:#f59e0b">D</span>DuckDNS</div>
+  <div class="s">DNS · A 레코드</div>
+  <ul><li>neo8.duckdns.org</li><li>→ <span class="k">8.232.111.83</span></li></ul>
+</div>
+
+<div class="box lb" style="left:320px; top:212px; width:246px; height:250px;">
+  <div class="t"><span class="ic" style="background:#4285f4">LB</span>Cloud Load Balancing</div>
+  <div class="s">Global External Application LB</div>
+  <ul>
+    <li>고정 IP <span class="k">8.232.111.83</span></li>
+    <li><b>:443</b> HTTPS 종단</li>
+    <li>Google 관리형 SSL 인증서</li>
+    <li><b>:80</b> → 301 HTTPS 리다이렉트</li>
+    <li>외부 공개 포트는 80·443뿐</li>
+  </ul>
+</div>
+<div class="badge" style="left:554px; top:200px;">1</div>
+<div class="badge" style="left:524px; top:200px;">2</div>
+
+<div class="box run" style="left:630px; top:212px; width:276px; height:234px;">
+  <div class="t"><span class="ic" style="background:#4285f4">CR</span>Cloud Run · WAS</div>
+  <div class="s">hackathon-server</div>
+  <ul>
+    <li>Spring Boot 4.1 · Java 25 (Docker)</li>
+    <li>min 1 / max 2 인스턴스 (상시 가동)</li>
+    <li>1 vCPU · 1 GiB · 컨테이너 :8080</li>
+    <li>전용 런타임 서비스 계정</li>
+    <li>Direct VPC egress → 사설 대역</li>
+  </ul>
+</div>
+<div class="badge" style="left:894px; top:200px;">5</div>
+
+<div class="box sql" style="left:1210px; top:240px; width:290px; height:200px;">
+  <div class="t"><span class="ic" style="background:#34a853">DB</span>Cloud SQL · MySQL 8.4</div>
+  <div class="s">hackathon-db (db-f1-micro)</div>
+  <ul>
+    <li><b>Private IP만</b> <span class="k">10.46.32.3:3306</span></li>
+    <li><b>Public IP 없음</b> (외부 접근 불가)</li>
+    <li>Private Service Access (VPC 피어링)</li>
+    <li>앱 전용 계정 <span class="k">hackathon_app</span></li>
+  </ul>
+</div>
+<div class="badge" style="left:1488px; top:228px;">3</div>
+
+<div class="box" style="left:956px; top:372px; width:236px; height:74px; border-style:dashed; background:#fbfefb;">
+  <div class="t" style="font-size:13px;">VPC 방화벽</div>
+  <ul style="font-size:11.5px;"><li>default-allow-internal만 유지</li><li>SSH·RDP·ICMP 외부 허용 삭제</li></ul>
+</div>
+<div class="badge" style="left:1180px; top:360px;">2</div>
+
+<div class="box sec" style="left:630px; top:530px; width:276px; height:150px;">
+  <div class="t"><span class="ic" style="background:#f59e0b">SM</span>Secret Manager</div>
+  <div class="s">민감정보 저장소</div>
+  <ul>
+    <li><span class="k">db-url</span> <span class="k">db-username</span> <span class="k">db-password</span></li>
+    <li>런타임 SA에만 secretAccessor 부여</li>
+    <li>코드·레포·GitHub에 비밀값 없음</li>
+  </ul>
+</div>
+<div class="badge" style="left:894px; top:518px;">4</div>
+
+<div class="box" style="left:956px; top:530px; width:236px; height:136px; border-color:#6d28d9;">
+  <div class="t"><span class="ic" style="background:#6d28d9">AR</span>Artifact Registry</div>
+  <div class="s">Docker 이미지 저장소</div>
+  <ul><li>커밋 SHA 태그 이미지</li><li>배포 SA만 push 가능</li></ul>
+</div>
+
+<div class="box" style="left:1230px; top:530px; width:270px; height:136px;">
+  <div class="t"><span class="ic" style="background:#6b7280">LG</span>Cloud Logging</div>
+  <div class="s">애플리케이션 로그 · 모니터링</div>
+  <ul><li>Cloud Run stdout 자동 수집</li><li>배포 이력 = 리비전 (즉시 롤백)</li></ul>
+</div>
+
+<!-- CI/CD nodes -->
+<div class="box" style="left:64px; top:790px; width:172px; height:116px;">
+  <div class="t"><span class="ic" style="background:#111827">Dev</span>개발자</div>
+  <ul><li>develop 브랜치 개발</li><li>develop → main 머지</li></ul>
+</div>
+<div class="box" style="left:294px; top:790px; width:272px; height:116px;">
+  <div class="t"><span class="ic" style="background:#24292f">GH</span>GitHub Repository</div>
+  <ul><li><b>develop</b> push/PR → CI (빌드·테스트)</li><li><b>main</b> push → 자동 배포</li><li>Action은 커밋 SHA로 고정</li></ul>
+</div>
+<div class="box" style="left:624px; top:790px; width:412px; height:116px;">
+  <div class="t"><span class="ic" style="background:#2088ff">GA</span>GitHub Actions · Deploy</div>
+  <ul>
+    <li>① Gradle 테스트 → ② Docker 빌드 (레이어 캐시)</li>
+    <li>③ Artifact Registry push → ④ Cloud Run 배포</li>
+    <li>⑤ <span class="k">/health</span> 스모크 테스트 (실패 시 이전 버전 유지)</li>
+  </ul>
+</div>
+<div class="box" style="left:1094px; top:790px; width:440px; height:116px;">
+  <div class="t"><span class="ic" style="background:#4285f4">ID</span>Workload Identity Federation</div>
+  <ul>
+    <li>GitHub OIDC 토큰 → 단기 GCP 자격증명 (키 파일 미사용)</li>
+    <li>이 레포의 <b>main 브랜치</b>만 배포 SA 사용 가능</li>
+    <li>배포 SA 권한: run.admin · AR writer · 런타임 SA 사용</li>
+  </ul>
+</div>
+<div class="badge" style="left:1522px; top:778px;">4</div>
+
+<!-- Edge labels -->
+<div class="elabel" style="left:256px; top:276px;">HTTPS</div>
+<div class="elabel" style="left:154px; top:410px;">DNS 조회</div>
+<div class="elabel" style="left:556px; top:310px; background:transparent; font-size:11px;">Serverless<br>NEG</div>
+<div class="elabel g" style="left:990px; top:296px;">JDBC · TCP 3306 (VPC 내부 사설망)</div>
+<div class="elabel b" style="left:774px; top:476px; color:#b45309;">환경변수 주입</div>
+<div class="elabel b" style="left:960px; top:494px; color:#6d28d9;">이미지 pull</div>
+<div class="elabel w" style="left:1008px; top:700px; color:#6d28d9;">push</div>
+<div class="elabel w" style="left:818px; top:724px;">deploy (WIF 인증)</div>
+
+<!-- Legend -->
+<div class="legend">
+  <div class="lt">보안 설정 요약</div>
+  <div class="grid">
+    <div class="it"><span class="n">1</span><div><b>HTTPS 적용</b> — LB에서 Google 관리형 인증서로 TLS 종단, HTTP(80)는 301로 HTTPS 강제</div></div>
+    <div class="it"><span class="n">2</span><div><b>방화벽</b> — 외부 공개는 LB 80·443뿐. VPC의 SSH(22)·RDP(3389)·ICMP 전체 허용 규칙 삭제, VM 없음</div></div>
+    <div class="it"><span class="n">3</span><div><b>DB 포트 비노출</b> — Cloud SQL Public IP 미할당, 3306은 VPC 사설망(Cloud Run Direct VPC egress)에서만 접근</div></div>
+    <div class="it"><span class="n">4</span><div><b>민감정보 관리</b> — DB 접속정보는 Secret Manager, CI는 WIF 키리스 인증. 레포·이미지·GitHub Secrets에 비밀값 없음</div></div>
+    <div class="it"><span class="n">5</span><div><b>WAS / DB 분리</b> — WAS는 Cloud Run, DB는 관리형 Cloud SQL로 분리. 서비스 계정 최소 권한 분리 (런타임 / 배포)</div></div>
+    <div class="it"><span class="n">✓</span><div style="color:#374151;"><b>CI/CD</b> — develop: 빌드·테스트 / main: 테스트 → 빌드 → 배포 → 헬스체크 자동화 (무중단 리비전 전환)</div></div>
+  </div>
+</div>
+
+</body>
+</html>
