@@ -20,4 +20,9 @@ public class UserQueryServiceImpl implements UserQueryService {
     return userRepository.findActiveProfileById(userId)
         .orElseThrow(() -> new BusinessException(ErrorStatus.USER_NOT_FOUND));
   }
+  @Override
+  public UserResponseDTO findProfile(String publicId) {
+    return userRepository.findActiveProfileByPublicId(publicId)
+        .orElseThrow(() -> new BusinessException(ErrorStatus.USER_NOT_FOUND));
+  }
 }

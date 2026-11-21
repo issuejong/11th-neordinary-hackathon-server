@@ -227,7 +227,7 @@ class RoutineApiTests extends ApiTestSupport {
     }
 
     @ParameterizedTest(name = "스텝 시간 \"{0}\" → 400")
-    @ValueSource(strings = {"25:00", "07:60", "7:00", "07:00:00", "아침", ""})
+    @ValueSource(strings = {"24:00", "25:00", "07:60", "7:00", "07:00:00", "아침", ""})
     void cardTimeInvalidFormat(String time) throws Exception {
       postRoutine(DEMO_USER_ID, routineJson("시간 형식 루틴", null, card(DemoData.IMAGE_ID, "스텝 제목입니다", time)))
           .andExpect(status().isBadRequest())

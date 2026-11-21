@@ -58,6 +58,19 @@ public class RoutineParticipation extends SoftDeletableEntity {
   @Column(name = "completed_at")
   private LocalDateTime completedAt;
 
+  @Column(name = "work_json", columnDefinition = "TEXT")
+  private String workJson;
+
+  public void saveWork(String workJson) {
+    this.workJson = workJson;
+    recordUpdate(user.getId());
+  }
+
+  public void discard(LocalDateTime now) {
+    this.workJson = null;
+    markDeleted(user.getId(), now);
+  }
+
   public RoutineParticipation(Routine routine, User user, LocalDateTime joinedAt) {
     super(user.getId());
     this.routine = routine;

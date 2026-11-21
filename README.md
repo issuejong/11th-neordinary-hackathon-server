@@ -36,3 +36,20 @@ curl -X POST http://localhost:8080/api/test-accounts \
 | DELETE | `/api/test-accounts/{publicId}/claim` | 계정 선택 화면으로 돌아갈 때 점유를 해제합니다. |
 
 계정 선택 이후 내 프로필, 댓글 작성, 좋아요 등 인증이 필요한 API에는 `Authorization: Bearer <accessToken>`을 보냅니다. 세션이 만료되면 401을 반환하므로 첫 화면에서 다시 프로필을 선택합니다. Swagger에서는 계정 선택 응답의 `accessToken`을 **Authorize**에 입력합니다.
+
+## 루틴 함께하기
+
+| 메서드 | 경로 | 동작 |
+| --- | --- | --- |
+| GET | `/api/users/{publicId}` | 사용자 공개 프로필을 조회합니다. |
+| POST | `/api/images/step` | JPEG, PNG, HEIC, HEIF 스텝 이미지를 최대 5MB까지 올립니다. |
+| PUT | `/api/routines/{routineId}/participation` | 참여를 시작합니다. |
+| GET | `/api/routines/{routineId}/participation/draft` | 본인의 초안을 조회합니다. |
+| PUT | `/api/routines/{routineId}/participation/draft` | 본인의 전체 초안을 저장합니다. 비어 있는 카드 위치는 배열에 `null`을 넣습니다. |
+| PUT | `/api/routines/{routineId}/participation/completion` | 일반 루틴 저장과 같은 `title`, `content`, `cards` 본문으로 참여 결과를 제출합니다. |
+| GET | `/api/routines/{routineId}/participation-results` | 원본에 연결된 공개 완료 결과와 전체 개수를 조회합니다. |
+| GET, PUT, DELETE | `/api/routines/{routineId}/participation-results/{participantId}` | 결과를 조회하거나 본인 결과를 수정·삭제합니다. |
+
+루틴 목록은 `likedByMe`, `myParticipationStatus`, `inProgressCount`, `completedCount`를 반환합니다. 계정 세션을 보내면 현재 사용자의 좋아요와 참여 상태를 확인할 수 있습니다.
+
+참여 완료의 기존 빈 본문 요청은 초안이 없는 참여에 상태만 기록합니다. 새 화면에서는 최종 입력값을 본문에 보내야 함께한 루틴 목록에 표시됩니다.

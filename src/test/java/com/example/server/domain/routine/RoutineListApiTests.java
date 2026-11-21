@@ -480,6 +480,25 @@ class RoutineListApiTests extends ApiTestSupport {
         .andExpect(jsonPath("$.result.participantId").isString());
   }
 
+  @Test
+  void returnsViewerStateAndSeparateParticipationCounts() throws Exception {
+    String routine = createRoutine(DEMO_USER_ID);
+    String viewer = newUser();
+    joinVia(viewer, routine);
+    String finisher = newUser();
+    joinVia(finisher, routine);
+    completeVia(finisher, routine);
+    mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+            .put("/api/routines/" + routine + "/like").header(LoginUser.HEADER, authorization(viewer)))
+        .andExpect(status().isOk());
+
+    mvc.perform(get("/api/routines?participantId=" + viewer).header(LoginUser.HEADER, authorization(viewer)))
+        .andExpect(jsonPath("$.result.routines[0].likedByMe").value(true))
+        .andExpect(jsonPath("$.result.routines[0].myParticipationStatus").value("IN_PROGRESS"))
+        .andExpect(jsonPath("$.result.routines[0].inProgressCount").value(1))
+        .andExpect(jsonPath("$.result.routines[0].completedCount").value(1));
+  }
+
   // ---------- 검증 ----------
 
   @ParameterizedTest(name = "sort={0} → 400")

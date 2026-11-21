@@ -3,6 +3,7 @@ package com.example.server.domain.routine.repository;
 import com.example.server.domain.routine.entity.Routine;
 import com.example.server.domain.routine.repository.projection.RoutineHeaderView;
 import com.example.server.domain.routine.repository.projection.RoutineInteractionView;
+import com.example.server.domain.routine.repository.projection.RoutineListInteractionView;
 import com.example.server.domain.routine.repository.projection.RoutineSummaryView;
 import jakarta.persistence.LockModeType;
 import java.util.List;
@@ -144,4 +145,16 @@ public interface RoutineRepository extends JpaRepository<Routine, Long> {
           where mp.routine = r and mu.publicId = :participantId and mp.deletedAt is null))
       """)
   long countForList(@Param("authorId") String authorId, @Param("participantId") String participantId);
+
+  @Query("""
+      select new com.example.server.domain.routine.repository.projection.RoutineListInteractionView(
+          r.publicId,
+          (select count(l) from RoutineLike l where l.routine = r and l.user.id = :viewerId and l.deletedAt is null),
+          (select count(p) from RoutineParticipation p where p.routine = r and p.status = IN_PROGRESS and p.deletedAt is null),
+          (select count(p) from RoutineParticipation p where p.routine = r and p.status = COMPLETED and p.deletedAt is null),
+          (select p.status from RoutineParticipation p where p.routine = r and p.user.id = :viewerId and p.deletedAt is null))
+      from Routine r where r.publicId in :publicIds
+      """)
+  List<RoutineListInteractionView> findListInteractions(@Param("publicIds") List<String> publicIds,
+      @Param("viewerId") Long viewerId);
 }

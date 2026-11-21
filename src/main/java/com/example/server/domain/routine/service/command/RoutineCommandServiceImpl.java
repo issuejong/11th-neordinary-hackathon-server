@@ -3,6 +3,7 @@ package com.example.server.domain.routine.service.command;
 import com.example.server.domain.image.entity.Image;
 import com.example.server.domain.image.repository.ImageKey;
 import com.example.server.domain.image.repository.ImageRepository;
+import com.example.server.domain.image.support.ProfileImagePolicy;
 import com.example.server.domain.routine.dto.RoutineRequestDTO;
 import com.example.server.domain.routine.dto.RoutineResponseDTO;
 import com.example.server.domain.routine.entity.Routine;
@@ -31,6 +32,7 @@ public class RoutineCommandServiceImpl implements RoutineCommandService {
   private final RoutineRepository routineRepository;
   private final RoutineCardRepository cardRepository;
   private final ImageRepository imageRepository;
+  private final ProfileImagePolicy imagePolicy;
   private final RoutineQueryService routineQueryService;
   private final UserRepository userRepository;
 
@@ -74,7 +76,11 @@ public class RoutineCommandServiceImpl implements RoutineCommandService {
   private void saveCards(Routine routine, List<RoutineRequestDTO.Card> cards, Long userId) {
     List<String> imageIds = cards.stream().map(RoutineRequestDTO.Card::imageId).distinct().toList();
     Map<String, Long> imageIdMap = imageRepository.findUsableKeys(imageIds, userId).stream()
-        .collect(Collectors.toMap(ImageKey::publicId, ImageKey::id));
+        .collect(Collectors.toMap(ImageKey::publicId, key -> {
+          imagePolicy.validateStepSize(key.byteSize());
+          imagePolicy.validateStepType(key.contentType());
+          return key.id();
+        }));
     if (imageIdMap.size() != imageIds.size()) {
       throw new BusinessException(ErrorStatus.IMAGE_NOT_FOUND);
     }

@@ -53,6 +53,10 @@ public class RoutineResponseDTO {
       @Schema(description = "스텝 개수", example = "3") long cardCount,
       @Schema(description = "좋아요 수", example = "0") long likeCount,
       @Schema(description = "참여자 수 (참여 중 + 완료, 취소 제외)", example = "0") long participantCount,
+      boolean likedByMe,
+      long inProgressCount,
+      long completedCount,
+      String myParticipationStatus,
       @Schema(description = "댓글 수 (삭제 제외)", example = "0") long commentCount,
       @Schema(description = "KST 기준 생성 시각", example = "2026-11-22T09:30:00.123456") LocalDateTime createdAt
   ) {

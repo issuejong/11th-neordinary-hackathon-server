@@ -40,7 +40,7 @@ public class ImageController {
       description = """
           - 형식: jpg, png, heic, heif, webp, gif (파일 내용으로 판별)
           - 용량: 최대 10MB / 해상도: 가로 · 세로 최대 8192px
-          - 응답의 imageId를 루틴 스텝(카드) 생성에 사용합니다.
+          - 루틴 스텝용 이미지는 /api/images/step에 올리세요.
           - 권장: 앱에서 긴 변 2048px, JPEG 품질 0.8 정도로 줄여서 업로드
           """)
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -61,6 +61,15 @@ public class ImageController {
       @Parameter(description = "업로드할 프로필 이미지 파일") @RequestPart("file") MultipartFile file
   ) {
     ImageResponseDTO.Upload result = commandService.uploadProfile(userId, file);
+    return ResponseEntity.created(URI.create(result.imageUrl()))
+        .body(ApiResponse.of(SuccessStatus._CREATED, result));
+  }
+
+  @Operation(summary = "루틴 스텝 이미지 업로드", description = "최대 5MB의 JPEG, PNG, HEIC, HEIF를 받습니다.")
+  @PostMapping(path = "/step", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  public ResponseEntity<ApiResponse<ImageResponseDTO.Upload>> uploadStep(
+      @LoginUser Long userId, @RequestPart("file") MultipartFile file) {
+    ImageResponseDTO.Upload result = commandService.uploadStep(userId, file);
     return ResponseEntity.created(URI.create(result.imageUrl()))
         .body(ApiResponse.of(SuccessStatus._CREATED, result));
   }

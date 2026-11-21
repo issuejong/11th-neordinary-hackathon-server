@@ -253,6 +253,7 @@
 | `status` | `ENUM('IN_PROGRESS','COMPLETED')` | NO | — | `'IN_PROGRESS'` | 참여중/참여완료 |
 | `joined_at` | `DATETIME(6)` | NO | — | `CURRENT_TIMESTAMP(6)` | 참여일시(재참여 시 갱신) |
 | `completed_at` | `DATETIME(6)` | YES | — | — | 참여 완료일시 |
+| `work_json` | `TEXT` | YES | — | — | 참여자 초안 또는 완료 결과의 제목·소개·스텝 |
 | `created_at` | `DATETIME(6)` | NO | — | `CURRENT_TIMESTAMP(6)` | 생성일시 |
 | `created_by` | `BIGINT` | NO | — | — | 생성 주체 user id |
 | `updated_at` | `DATETIME(6)` | NO | — | `CURRENT_TIMESTAMP(6)` | 수정일시 |
@@ -282,3 +283,7 @@
 - **이미지 업로드**는 API에서 형식(jpg, png, heic, heif, webp, gif, 파일 시그니처로 판별), 용량(파일 10MB, 요청 20MB), 해상도(가로 · 세로 최대 8192px)를 검증합니다. `content_type`에는 판별된 실제 형식이 저장됩니다. `MEDIUMBLOB`의 저장 한도는 16 MiB보다 1바이트 작습니다.
 - **프로필 이미지**는 업로드와 적용 시 JPG, PNG, HEIC, HEIF 형식과 최대 5MB를 확인합니다.
 - **시각 컬럼**은 모두 마이크로초 정밀도(`DATETIME(6)`)입니다.
+
+### 참여 초안과 결과
+
+`routine_participations.work_json`은 NULL을 허용하는 TEXT 컬럼입니다. 진행 중에는 본인만 볼 수 있는 초안을 저장합니다. 완료할 때 검증된 제목, 소개와 스텝 배열을 저장하며, 완료 상태이고 작성 데이터가 있는 행만 함께한 루틴 목록에 공개합니다. 취소하거나 결과를 삭제하면 작성 데이터를 비웁니다.

@@ -38,6 +38,8 @@ public enum ErrorStatus implements BaseCode {
   IMAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "IMAGE404", "이미지를 찾을 수 없습니다."),
 
   // 루틴
+  STEP_IMAGE_TOO_LARGE(HttpStatus.BAD_REQUEST, "IMAGE4006", "스텝 이미지는 최대 5MB입니다."),
+  STEP_IMAGE_UNSUPPORTED_TYPE(HttpStatus.BAD_REQUEST, "IMAGE4007", "스텝 이미지는 JPEG, PNG, HEIC, HEIF만 지원합니다."),
   ROUTINE_INVALID_CURSOR(HttpStatus.BAD_REQUEST, "ROUTINE4001", "잘못된 커서입니다. 이전 응답의 nextCursor를 같은 sort와 함께 보내 주세요."),
   ROUTINE_FORBIDDEN(HttpStatus.FORBIDDEN, "ROUTINE403", "루틴 작성자만 수정하거나 삭제할 수 있습니다."),
   ROUTINE_NOT_FOUND(HttpStatus.NOT_FOUND, "ROUTINE404", "루틴을 찾을 수 없습니다."),
@@ -48,6 +50,9 @@ public enum ErrorStatus implements BaseCode {
 
   // 참여
   PARTICIPATION_OWNER_FORBIDDEN(HttpStatus.FORBIDDEN, "PARTICIPATION403", "내가 만든 루틴에는 참여할 수 없습니다."),
+  PARTICIPATION_RESULT_NOT_FOUND(HttpStatus.NOT_FOUND, "PARTICIPATION404", "참여 결과를 찾을 수 없습니다."),
+  PARTICIPATION_RESULT_FORBIDDEN(HttpStatus.FORBIDDEN, "PARTICIPATION4032", "작성자만 참여 결과를 변경할 수 있습니다."),
+  PARTICIPATION_WORK_REQUIRED(HttpStatus.BAD_REQUEST, "PARTICIPATION400", "완료하려면 모든 스텝과 루틴 제목을 제출해 주세요."),
   PARTICIPATION_INVALID_STATE(HttpStatus.CONFLICT, "PARTICIPATION409", "현재 참여 상태에서는 이 동작을 할 수 없습니다.");
 
   private final HttpStatus httpStatus;

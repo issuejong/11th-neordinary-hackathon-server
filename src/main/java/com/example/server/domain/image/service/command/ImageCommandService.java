@@ -8,4 +8,5 @@ public interface ImageCommandService {
   ImageResponseDTO.Upload upload(Long userId, MultipartFile file);
 
   ImageResponseDTO.Upload uploadProfile(Long userId, MultipartFile file);
+  ImageResponseDTO.Upload uploadStep(Long userId, MultipartFile file);
 }

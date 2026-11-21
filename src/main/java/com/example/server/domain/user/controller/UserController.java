@@ -7,8 +7,13 @@ import com.example.server.domain.user.service.query.UserQueryService;
 import com.example.server.global.auth.LoginUser;
 import com.example.server.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import com.example.server.global.init.DemoData;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import com.example.server.global.util.Ulid;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
+import org.springframework.web.bind.annotation.PathVariable;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -29,6 +34,14 @@ public class UserController {
   @GetMapping("/me")
   public ApiResponse<UserResponseDTO> findMe(@LoginUser Long userId) {
     return ApiResponse.onSuccess(queryService.findMe(userId));
+  }
+
+  @Operation(summary = "사용자 공개 프로필 조회")
+  @GetMapping("/{publicId}")
+  public ApiResponse<UserResponseDTO> findProfile(
+      @Parameter(example = DemoData.USER_ID)
+      @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String publicId) {
+    return ApiResponse.onSuccess(queryService.findProfile(publicId));
   }
 
   @Operation(summary = "내 프로필 수정",

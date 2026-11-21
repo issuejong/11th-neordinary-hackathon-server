@@ -16,7 +16,7 @@ public interface ImageRepository extends JpaRepository<Image, Long> {
 
   /** 본인이 올린 이미지 또는 시스템 기본 이미지(created_by NULL)만, 바이너리(data) 없이 id만 조회한다. */
   @Query("""
-      select new com.example.server.domain.image.repository.ImageKey(i.id, i.publicId)
+      select new com.example.server.domain.image.repository.ImageKey(i.id, i.publicId, i.contentType, i.byteSize)
       from Image i
       where i.publicId in :publicIds and i.deletedAt is null
         and (i.createdBy = :userId or i.createdBy is null)

@@ -1,6 +1,12 @@
 package com.example.server.domain.routine.controller;
 
 import com.example.server.domain.routine.dto.RoutineResponseDTO.Interactions;
+import com.example.server.domain.routine.dto.RoutineRequestDTO.Save;
+import com.example.server.domain.routine.dto.ParticipationWorkDTO.Draft;
+import com.example.server.domain.routine.service.ParticipationWorkService;
+import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import com.example.server.domain.routine.service.command.RoutineParticipationCommandService;
 import com.example.server.global.auth.LoginUser;
 import com.example.server.global.init.DemoData;
@@ -24,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class RoutineParticipationController {
 
   private final RoutineParticipationCommandService commandService;
+  private final ParticipationWorkService works;
 
   @Operation(summary = "루틴 참여 시작", description = "취소한 참여를 다시 시작하면 시작 시각을 갱신하고 완료 시각을 초기화합니다.")
   @PutMapping
@@ -45,13 +52,32 @@ public class RoutineParticipationController {
     return ApiResponse.onSuccess(commandService.cancel(userId, routineId));
   }
 
-  @Operation(summary = "루틴 참여 완료", description = "진행 중인 참여를 완료 처리합니다. 완료된 참여에 같은 요청을 보내면 완료 상태를 반환합니다.")
+  @Operation(summary = "내 루틴 참여 초안 조회")
+  @GetMapping("/draft")
+  public ApiResponse<Draft> draft(@LoginUser Long userId,
+      @Parameter(example = DemoData.ROUTINE_ID)
+      @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String routineId) {
+    return ApiResponse.onSuccess(works.findDraft(routineId, userId));
+  }
+
+  @Operation(summary = "내 루틴 참여 초안 저장", description = "현재 작성 내용을 전체 교체합니다.")
+  @PutMapping("/draft")
+  public ApiResponse<Draft> saveDraft(@LoginUser Long userId,
+      @Parameter(example = DemoData.ROUTINE_ID)
+      @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String routineId,
+      @Valid @RequestBody Draft request) {
+    return ApiResponse.onSuccess(works.saveDraft(routineId, userId, request));
+  }
+
+  @Operation(summary = "루틴 참여 완료", description = "작성한 제목·소개·스텝을 보내 완료 결과를 공개합니다.")
   @PutMapping("/completion")
   public ApiResponse<Interactions> complete(
       @LoginUser Long userId,
       @Parameter(description = "루틴 publicId", example = DemoData.ROUTINE_ID)
-      @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String routineId
+      @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String routineId,
+      @Valid @RequestBody(required = false) Save request
   ) {
-    return ApiResponse.onSuccess(commandService.complete(userId, routineId));
+    return ApiResponse.onSuccess(request == null ? commandService.complete(userId, routineId)
+        : works.complete(routineId, userId, request));
   }
 }

@@ -47,7 +47,7 @@ class TestAccountApiTests extends ApiTestSupport {
         .andExpect(jsonPath("$.result[?(@.slot == 1)].publicId").value(id))
         .andExpect(jsonPath("$.result[?(@.slot == 7)].publicId").value(lastId));
     claim(BASE + "/" + lastId + "/claim");
-    mvc.perform(post("/api/users/connect")).andExpect(status().isNotFound());
+    mvc.perform(post("/api/users/connect")).andExpect(status().isMethodNotAllowed());
   }
 
   @Test
