@@ -102,6 +102,24 @@ class GlobalExceptionHandlerTests {
   }
 
   @Test
+  void errorResponsesAreJsonEvenWhenClientAcceptsOnlyOtherTypes() throws Exception {
+    for (MediaType accept : new MediaType[] {MediaType.TEXT_PLAIN, MediaType.APPLICATION_XML, MediaType.IMAGE_PNG, MediaType.TEXT_HTML}) {
+      // 401/400/404 등 에러는 Accept와 무관하게 JSON (500으로 바뀌지 않음)
+      mvc.perform(get("/api/users/me").accept(accept))
+          .andExpect(status().is4xxClientError())
+          .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+              .contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+          .andExpect(jsonPath("$.isSuccess").value(false));
+      mvc.perform(get("/api/routines/abc").accept(accept))
+          .andExpect(status().isBadRequest())
+          .andExpect(jsonPath("$.code").value("COMMON400"));
+      mvc.perform(get("/api/routines/01KB0000000000000000ZZZ999").accept(accept))
+          .andExpect(status().isNotFound())
+          .andExpect(jsonPath("$.code").value("ROUTINE404"));
+    }
+  }
+
+  @Test
   void unexpectedExceptionReturns500WithoutInternalMessage() throws Exception {
     mvc.perform(get("/test/errors/boom"))
         .andExpect(status().isInternalServerError())
