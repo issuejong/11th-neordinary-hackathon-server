@@ -1,5 +1,7 @@
 package com.example.server;
 
+import com.example.server.support.TestSessions;
+import org.springframework.context.annotation.Import;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,10 +16,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@Import(TestSessions.class)
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class NewServerApplicationTests {
+
+  @Autowired
+  private TestSessions sessions;
 
   @Autowired
   private MockMvc mvc;
@@ -39,7 +45,7 @@ class NewServerApplicationTests {
         .andExpect(jsonPath("$.result").exists());
 
     mvc.perform(post("/api/routines")
-            .header("X-Device-Token", "demo-device-token")
+            .header("Authorization", sessions.authorization("01KB0000000000000000MEM001"))
             .contentType(MediaType.APPLICATION_JSON)
             .content("""
                 {"title": ""}

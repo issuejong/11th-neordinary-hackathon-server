@@ -13,10 +13,10 @@ import com.jayway.jsonpath.JsonPath;
 import jakarta.persistence.EntityManager;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
@@ -28,9 +28,10 @@ import org.springframework.transaction.support.TransactionTemplate;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Import(TestSessions.class)
 public abstract class ApiTestSupport {
 
-  protected static final String DEMO_TOKEN = DemoData.USER_DEVICE_TOKEN;
+  protected static final String DEMO_USER_ID = DemoData.USER_ID;
   protected static final String UNKNOWN_ID = "01KB0000000000000000ZZZ999";
 
   @Autowired
@@ -42,21 +43,28 @@ public abstract class ApiTestSupport {
   @Autowired
   protected TransactionTemplate tx;
 
-  /** 기본 이미지를 프로필로 가진 새 사용자를 만들고 기기 토큰을 반환한다. */
+  @Autowired
+  private TestSessions sessions;
+
+  protected String authorization(String publicId) {
+    return sessions.authorization(publicId);
+  }
+
+  /** 기본 이미지를 프로필로 가진 새 사용자를 만들고 publicId를 반환한다. */
   protected String newUser() {
-    String token = "device-" + UUID.randomUUID();
+    String publicId = Ulid.generate();
     tx.executeWithoutResult(status -> {
       Image profile = entityManager.createQuery("from Image i where i.publicId = :p", Image.class)
           .setParameter("p", DemoData.IMAGE_ID).getSingleResult();
-      entityManager.persist(new User(Ulid.generate(), token, "테스트 유저", profile));
+      entityManager.persist(new User(publicId, "테스트" + publicId, profile));
     });
-    return token;
+    return publicId;
   }
 
   protected ResultActions uploadImage(String token, String contentType, byte[] data) throws Exception {
     return mvc.perform(multipart("/api/images")
         .file(new MockMultipartFile("file", "image", contentType, data))
-        .header(LoginUser.HEADER, token));
+        .header(LoginUser.HEADER, authorization(token)));
   }
 
   protected String uploadImageId(String token) throws Exception {
@@ -67,7 +75,7 @@ public abstract class ApiTestSupport {
   }
 
   protected ResultActions postRoutine(String token, String json) throws Exception {
-    return mvc.perform(post("/api/routines").header(LoginUser.HEADER, token)
+    return mvc.perform(post("/api/routines").header(LoginUser.HEADER, authorization(token))
         .contentType(MediaType.APPLICATION_JSON).content(json));
   }
 

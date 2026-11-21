@@ -37,7 +37,7 @@ public class RoutineCommentController {
   private final RoutineCommentQueryService queryService;
 
   @Operation(summary = "루틴 댓글 목록 조회",
-      description = "작성순으로 조회합니다. 기기 토큰을 보내면 내 댓글에 isMine을 true로 반환합니다. 생략하면 isMine은 모두 false입니다.")
+      description = "작성순으로 조회합니다. 점유 세션을 보내면 내 댓글에 isMine을 true로 반환합니다. 생략하면 isMine은 모두 false입니다.")
   @GetMapping
   public ApiResponse<List<RoutineCommentResponseDTO>> findAll(
       @LoginUser(required = false) Long userId,

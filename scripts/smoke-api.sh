@@ -2,10 +2,9 @@
 # API 스모크 테스트 (실제 서버 대상). 사용: scripts/smoke-api.sh [BASE_URL]
 #   로컬: scripts/smoke-api.sh http://localhost:8080
 #   운영: scripts/smoke-api.sh https://neo8.duckdns.org
-# 주의: 데모 사용자로 루틴을 하나 만들고 수정 · 삭제한다 (시드 데이터는 건드리지 않음).
+# 주의: 사용 가능한 테스트 계정을 점유해 루틴 생성·수정·삭제를 검사한다.
 set -uo pipefail
 BASE="${1:-http://localhost:8080}"
-TOKEN="demo-device-token"
 ROUTINE="01KB0000000000000000RTN001"
 IMAGE="01KB0000000000000000DEF001"
 PASS=0; FAIL=0
@@ -27,7 +26,19 @@ json() { python3 -c 'import sys,json; d=json.load(sys.stdin);
 for k in sys.argv[1].split("."): d=d[int(k)] if k.isdigit() else d[k]
 print(d)' "$1" <<<"$BODY"; }
 J=(-H 'Content-Type: application/json')
-A=(-H "X-Device-Token: $TOKEN")
+req GET /api/test-accounts
+ACCOUNT_ID=$(python3 -c 'import json,sys; print(next((account["publicId"] for account in json.load(sys.stdin)["result"] if account["available"]), ""))' <<<"$BODY")
+if [[ -z "$ACCOUNT_ID" ]]; then
+  echo "사용 가능한 테스트 계정을 먼저 등록하세요." >&2
+  exit 1
+fi
+req POST "/api/test-accounts/$ACCOUNT_ID/claim"
+if [[ "$STATUS" != 200 ]]; then
+  echo "테스트 계정 점유 실패 ($STATUS)" >&2
+  exit 1
+fi
+A=(-H "Authorization: Bearer $(json result.accessToken)")
+trap 'req DELETE "/api/test-accounts/$ACCOUNT_ID/claim" "${A[@]}"; rm -rf "$TMP"' EXIT
 card() { printf '{"imageId":"%s","title":"%s","time":"%s"}' "$1" "$2" "$3"; }
 
 echo "== $BASE"
@@ -55,8 +66,8 @@ req POST /api/images "${A[@]}" -F "file=@$TMP/a.txt;type=image/png"; check "이�
 req POST /api/images "${A[@]}" -F "file=@$TMP/empty.png;type=image/png"; check "빈 파일 거절" 400 "$STATUS" IMAGE4001 "$BODY"
 { cat "$TMP/a.png"; head -c $((12*1024*1024)) /dev/zero; } > "$TMP/big.png"
 req POST /api/images "${A[@]}" -F "file=@$TMP/big.png;type=image/png"; check "12MB 거절" 400 "$STATUS" FILE400 "$BODY"
-req POST /api/images -F "file=@$TMP/a.png;type=image/png"; check "헤더 없이 업로드" 400 "$STATUS" COMMON400 "$BODY"
-req POST /api/images -H 'X-Device-Token: nobody' -F "file=@$TMP/a.png;type=image/png"; check "모르는 토큰" 404 "$STATUS" USER404 "$BODY"
+req POST /api/images -F "file=@$TMP/a.png;type=image/png"; check "헤더 없이 업로드" 401 "$STATUS" TEST401 "$BODY"
+req POST /api/images -H 'Authorization: Bearer invalid' -F "file=@$TMP/a.png;type=image/png"; check "유효하지 않은 세션" 401 "$STATUS" TEST401 "$BODY"
 req GET /api/images/01KB0000000000000000ZZZ999;  check "없는 이미지" 404 "$STATUS" IMAGE404 "$BODY"
 req GET /api/images/abc;                           check "잘못된 이미지 ID" 400 "$STATUS" COMMON400 "$BODY"
 
@@ -66,7 +77,7 @@ req GET /api/routines;                             check "목록 (기본 latest)
 for s in latest likes participants; do req GET "/api/routines?sort=$s&size=5"; check "목록 sort=$s" 200 "$STATUS" COMMON200 "$BODY"; done
 req GET "/api/routines?sort=popular";              check "잘못된 sort" 400 "$STATUS" COMMON400 "$BODY"
 req GET "/api/routines?size=51";                   check "size 초과" 400 "$STATUS" COMMON400 "$BODY"
-req GET "/api/routines?authorId=01KB0000000000000000MEM001&size=50"; check "내 루틴 (authorId)" 200 "$STATUS" COMMON200 "$BODY"
+req GET "/api/routines?authorId=01KB0000000000000000MEM001&size=50"; check "시드 작성자 루틴 (authorId)" 200 "$STATUS" COMMON200 "$BODY"
 OWNERS=$(json result.routines | python3 -c 'import sys,ast;print(sorted({r["owner"]["userId"] for r in ast.literal_eval(sys.stdin.read())}))')
 [[ "$OWNERS" == "['01KB0000000000000000MEM001']" ]] && check "authorId 필터 (작성자 1명만)" 1 1 || check "authorId 필터 (작성자 1명만)" 1 0
 req GET "/api/routines?authorId=abc";              check "잘못된 authorId" 400 "$STATUS" COMMON400 "$BODY"

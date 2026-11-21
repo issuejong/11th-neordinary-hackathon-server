@@ -1,12 +1,13 @@
 # 루틴 서비스 ERD 명세
 
-공유된 스키마 기준으로 7개 테이블의 컬럼, 인덱스, 외래 키를 정리했습니다. 컬럼 타입은 MySQL 기준입니다.
+8개 테이블의 컬럼, 인덱스, 외래 키를 정리했습니다. 컬럼 타입은 MySQL 기준입니다.
 
 ## 테이블 개요
 
 | 테이블 | 역할 |
 | --- | --- |
-| `users` | 사용자 프로필과 로그인 조회용 식별자를 저장합니다. |
+| `users` | 사용자 프로필과 공개 식별자를 저장합니다. |
+| `test_account_leases` | 테스트 계정의 표시 위치와 점유 세션을 저장합니다. |
 | `images` | 기본 프로필 이미지와 카드 이미지의 바이너리를 저장합니다. |
 | `routines` | 루틴의 소유자, 제목, 소개와 생성·수정·삭제 기록을 저장합니다. |
 | `routine_cards` | 루틴을 구성하는 카드의 내용, 이미지, 시간과 순서를 저장합니다. |
@@ -18,7 +19,7 @@
 
 ## `users`
 
-가입 시 기본 대표 이미지 중 하나를 무작위로 배정합니다.
+계정 등록 시 기본 대표 이미지 중 하나를 무작위로 배정합니다.
 
 ### 컬럼
 
@@ -26,7 +27,6 @@
 | --- | --- | --- | --- | --- | --- |
 | `id` | `BIGINT` | NO | PK, AI | — | 내부 식별자(PK, 외부 노출 금지) |
 | `public_id` | `CHAR(26)` | NO | — | — | 외부 노출용 식별자(ULID) |
-| `device_token` | `VARCHAR(255)` | NO | — | — | 기기의 프로필 목록을 찾는 값입니다. 한 기기의 여러 프로필이 같은 토큰을 공유할 수 있습니다. |
 | `nickname` | `VARCHAR(30)` | NO | — | — | 표시 이름. 프로필에서 변경할 때 2~10자를 허용합니다. |
 | `nickname_key` | `VARCHAR(60)` | YES | — | — | 생성하거나 변경한 닉네임의 소문자 값입니다. 동시 요청의 중복을 방지합니다. 기존 데이터는 `NULL`을 유지하고 중복 검사에 `nickname`도 사용합니다. |
 | `bio` | `VARCHAR(100)` | YES | — | — | 마이페이지 한 줄 소개. 프로필 수정 시 최대 50자이며 `null`로 지울 수 있습니다. |
@@ -43,18 +43,30 @@
 | 이름 | 컬럼 | 종류 |
 | --- | --- | --- |
 | `uk_users_public_id` | `public_id` | UNIQUE |
-| `idx_users_device_token` | `device_token` | INDEX |
 | `uk_users_nickname_key` | `nickname_key` | UNIQUE |
 | `idx_users_profile_image` | `profile_image_id` | INDEX |
 | `pk_users` | `id` | PRIMARY KEY |
 
-앱에서 프로필을 선택한 뒤에는 `X-Device-Token`과 `X-User-Id`(사용자 `public_id`)를 함께 보냅니다. 기존 MySQL의 `uk_users_device_token`은 서버 시작 시 제거합니다.
 
 ### 외래 키
 
 | 컬럼 | 참조 컬럼 | ON DELETE | ON UPDATE |
 | --- | --- | --- | --- |
 | `profile_image_id` | `images.id` | `RESTRICT` | `RESTRICT` |
+
+## `test_account_leases`
+
+등록한 테스트 프로필은 기존 `users`에 저장합니다. 이 테이블은 첫 화면에 표시할 슬롯과 현재 점유 세션을 관리합니다.
+
+| 컬럼 | 타입 | NULL 허용 | 키 | 의미 |
+| --- | --- | --- | --- | --- |
+| `id` | `BIGINT` | NO | PK, AI | 내부 식별자 |
+| `slot` | `INT` | NO | UNIQUE | 첫 화면 표시 위치(1~5) |
+| `user_id` | `BIGINT` | NO | FK, UNIQUE | `users.id` |
+| `token_hash` | `VARCHAR(64)` | YES | UNIQUE | 서버가 발급한 점유 세션 토큰의 SHA-256 해시 |
+| `expires_at` | `DATETIME(6)` | YES | — | 현재 점유 세션의 만료 시각(UTC) |
+
+기존 MySQL에 `users.device_token` 컬럼이 필수로 남아 있으면 서버 시작 시 NULL을 허용하도록 변경합니다. 기존 데이터는 보존하며 신규 사용자 식별에는 점유 세션을 사용합니다.
 
 ## `images`
 

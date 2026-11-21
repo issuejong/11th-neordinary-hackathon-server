@@ -37,8 +37,8 @@ class RoutineEntityMappingTests {
     byte[] data = {1, 2, 3};
     Image image = new Image(publicId(1), "image/png", data, null);
     entityManager.persist(image);
-    User owner = new User(publicId(2), "owner-token", "작성자", image);
-    User member = new User(publicId(3), "member-token", "참여자", image);
+    User owner = new User(publicId(2), "작성자", image);
+    User member = new User(publicId(3), "참여자", image);
     entityManager.persist(owner);
     entityManager.persist(member);
     Routine routine = new Routine(publicId(4), owner, "아침 준비 루틴", "출근 전 하루를 준비해요.");
@@ -74,7 +74,7 @@ class RoutineEntityMappingTests {
   void databaseRejectsDuplicateOrOutOfRangeCardOrder(int invalidOrder) {
     Image image = new Image(publicId(1), "image/png", new byte[]{1}, null);
     entityManager.persist(image);
-    User user = new User(publicId(2), "owner-token", "작성자", image);
+    User user = new User(publicId(2), "작성자", image);
     entityManager.persist(user);
     Routine routine = new Routine(publicId(3), user, "아침 준비 루틴", null);
     entityManager.persist(routine);

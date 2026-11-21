@@ -1,9 +1,7 @@
 package com.example.server.global.config;
 
 import com.example.server.global.auth.LoginUser;
-import com.example.server.global.init.DemoData;
 import com.example.server.global.response.code.status.ErrorStatus;
-import com.example.server.global.util.Ulid;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
@@ -14,9 +12,10 @@ import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
-import io.swagger.v3.oas.models.parameters.HeaderParameter;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.tags.Tag;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -36,6 +35,7 @@ import org.springframework.web.method.HandlerMethod;
 public class SwaggerConfig {
 
   private static final String ERROR_SCHEMA = "ErrorResponse";
+  public static final String TEST_ACCOUNT_SESSION = "TestAccountSession";
 
   static {
     // @LoginUser Long 파라미터는 쿼리 파라미터로 문서화하지 않는다 (헤더로 대체)
@@ -50,12 +50,15 @@ public class SwaggerConfig {
             .version("v1")
             .description(guide()))
         .tags(List.of(
-            new Tag().name("User").description("기기 토큰 기반 가입 · 내 프로필"),
+            new Tag().name("Test Account").description("고정 테스트 계정 선택"),
+            new Tag().name("User").description("내 프로필"),
             new Tag().name("Image").description("이미지 업로드(DB 저장) · 조회"),
             new Tag().name("Routine").description("루틴 목록 · 생성 · 상세 · 수정 · 삭제"),
             new Tag().name("Routine Comment").description("루틴 댓글"),
             new Tag().name("Health").description("서버 상태 확인")))
-        .components(new Components().addSchemas(ERROR_SCHEMA, errorSchema()));
+        .components(new Components().addSchemas(ERROR_SCHEMA, errorSchema())
+            .addSecuritySchemes(TEST_ACCOUNT_SESSION, new SecurityScheme().type(SecurityScheme.Type.HTTP)
+                .scheme("bearer").description("계정 선택 응답의 accessToken을 입력합니다.")));
   }
 
   /** 문서 상단 안내: 프론트가 처음 읽을 사용법 + 에러 코드 전체 목록(ErrorStatus에서 자동 생성) */
@@ -72,12 +75,11 @@ public class SwaggerConfig {
         - ID는 모두 **publicId(ULID 26자, 예: `01KB0000000000000000RTN001`)** 입니다.
         - 시각(`createdAt` 등)은 **KST(Asia/Seoul)** 기준 `yyyy-MM-dd'T'HH:mm:ss.SSSSSS` (시간대 표기 없음), 스텝 시간은 `HH:mm`.
 
-        ### 인증 (임시)
-        - 첫 화면에서 `GET /api/users`로 기기의 프로필을 조회하고, `POST /api/users`로 프로필을 추가합니다.
-        - 프로필을 선택한 후에는 **`X-Device-Token`** 과 **`X-User-Id`**(선택한 프로필의 publicId)를 보냅니다.
-        - 댓글 목록은 기기 토큰 없이 조회할 수 있습니다. 토큰을 보내면 내 댓글에 `isMine: true`가 표시됩니다.
-        - 프로필이 한 개면 `X-User-Id`를 생략할 수 있습니다. 토큰에 해당 프로필이 없으면 `404 USER404`를 반환합니다.
-        - Swagger 예시값은 데모 사용자 토큰(`%s`)이라 그대로 Execute 하면 됩니다.
+        ### 사용자 식별 (데모)
+        - `GET /api/test-accounts`에서 등록된 계정을 확인하고, 사용 가능한 계정의 `publicId`로 `POST /api/test-accounts/{publicId}/claim`을 호출합니다.
+        - 응답의 `accessToken`을 Swagger의 Authorize에 입력하거나 `Authorization: Bearer <accessToken>`으로 보냅니다.
+        - 앱은 사용 중인 계정의 heartbeat를 30초마다 호출하고, 계정 선택 화면으로 돌아가면 사용권을 해제합니다.
+        - 댓글 목록은 사용권 없이도 조회할 수 있습니다. 사용권을 보내면 내 댓글에 `isMine: true`가 표시됩니다.
 
         ### 루틴 만들기 흐름
         1. `POST /api/images` (multipart `file`) → `result.imageId`
@@ -96,7 +98,7 @@ public class SwaggerConfig {
         | HTTP | code | message |
         | --- | --- | --- |
         %s
-        """.formatted(DemoData.USER_DEVICE_TOKEN, errorRows);
+        """.formatted(errorRows);
   }
 
   private static Schema<?> errorSchema() {
@@ -113,7 +115,7 @@ public class SwaggerConfig {
 
   /**
    * 모든 API 공통 문서 보강
-   * - @LoginUser가 있으면 X-Device-Token 헤더(예시값 포함) 추가
+   * - @LoginUser가 있으면 테스트 계정 세션을 문서화
    * - 생성(POST + ResponseEntity) 응답은 201로 표시
    * - 발생 가능한 에러 응답(400 / 403 / 404 / 500)과 예시 추가
    */
@@ -126,23 +128,10 @@ public class SwaggerConfig {
           .findFirst()
           .orElse(null);
       if (loginUser != null) {
-        String exampleToken = loginUser.example().isEmpty() ? DemoData.USER_DEVICE_TOKEN : loginUser.example();
-        String exampleUserId = exampleToken.equals(DemoData.PARTICIPANT_DEVICE_TOKEN)
-            ? DemoData.PARTICIPANT_ID : DemoData.USER_ID;
-        operation.addParametersItem(new HeaderParameter()
-            .name(LoginUser.HEADER)
-            .required(loginUser.required())
-            .description(loginUser.required()
-                ? "요청한 사용자의 기기 토큰 (임시 인증). 데모 사용자: " + exampleToken
-                : "선택 헤더. 생략하면 사용자별 상태를 표시하지 않습니다.")
-            .example(exampleToken)
-            .schema(new StringSchema()));
-        operation.addParametersItem(new HeaderParameter()
-            .name(LoginUser.USER_ID_HEADER)
-            .required(false)
-            .description("선택한 사용자 publicId. 같은 기기 토큰에 활성 프로필이 여러 개면 필수입니다.")
-            .example(exampleUserId)
-            .schema(new StringSchema().pattern(Ulid.REGEX)));
+        if (!loginUser.required()) {
+          operation.addSecurityItem(new SecurityRequirement());
+        }
+        operation.addSecurityItem(new SecurityRequirement().addList(TEST_ACCOUNT_SESSION));
       }
       markCreated(operation, handlerMethod);
       if (!handlerMethod.getMethod().getDeclaringClass().getPackageName().endsWith(".health")) {
@@ -156,33 +145,36 @@ public class SwaggerConfig {
     ApiResponses responses = operation.getResponses();
     if (handlerMethod.hasMethodAnnotation(PostMapping.class)
         && ResponseEntity.class.isAssignableFrom(handlerMethod.getMethod().getReturnType())
-        && responses != null && responses.containsKey("200")) {
+        && responses != null && responses.containsKey("200") && !responses.containsKey("201")) {
       ApiResponse ok = responses.remove("200");
       responses.addApiResponse("201", ok.description("생성 성공 (COMMON201)"));
     }
   }
 
   private static void addErrorResponses(Operation operation, HandlerMethod handlerMethod, LoginUser loginUser) {
-    boolean requiresToken = loginUser != null && loginUser.required();
+    boolean requiresUser = loginUser != null && loginUser.required();
     boolean hasPathVariable = Arrays.stream(handlerMethod.getMethodParameters())
         .anyMatch(p -> p.hasParameterAnnotation(org.springframework.web.bind.annotation.PathVariable.class));
-    boolean mutatesOwned = requiresToken && hasPathVariable
+    boolean mutatesOwned = requiresUser && hasPathVariable
         && (handlerMethod.hasMethodAnnotation(org.springframework.web.bind.annotation.PutMapping.class)
         || handlerMethod.hasMethodAnnotation(org.springframework.web.bind.annotation.PatchMapping.class)
         || handlerMethod.hasMethodAnnotation(org.springframework.web.bind.annotation.DeleteMapping.class));
     String domain = handlerMethod.getBeanType().getSimpleName();
-    String notFoundCode = domain.contains("Comment") ? "COMMENT404 · ROUTINE404"
+    boolean testAccount = domain.equals("TestAccountController");
+    String action = handlerMethod.getMethod().getName();
+    String notFoundCode = testAccount ? "TEST404" : domain.contains("Comment") ? "COMMENT404 · ROUTINE404"
         : domain.contains("Routine") ? "ROUTINE404" : domain.contains("Image") ? "IMAGE404" : "USER404";
     boolean updatesProfile = domain.equals("UserController")
         && handlerMethod.hasMethodAnnotation(org.springframework.web.bind.annotation.PatchMapping.class);
     boolean changesParticipation = domain.equals("RoutineParticipationController");
 
     Map<String, ApiResponse> errors = new LinkedHashMap<>();
-    errors.put("400", error("입력값 오류 (COMMON400 등) — result에 필드별 메시지"
-        + (requiresToken ? " / X-Device-Token 헤더 누락" : "")
-        + (loginUser != null ? " / 기기에 프로필이 여러 개일 때 X-User-Id 누락 (USER4002)" : ""),
-        "COMMON400", "요청 형식이 올바르지 않습니다.",
+    errors.put("400", error("입력값 오류 (COMMON400 등) — result에 필드별 메시지", "COMMON400", "요청 형식이 올바르지 않습니다.",
         Map.of("필드명", "오류 메시지")));
+    if (loginUser != null || (testAccount && (action.equals("heartbeat") || action.equals("release")))) {
+      ErrorStatus invalidSession = ErrorStatus.TEST_SESSION_INVALID;
+      errors.put("401", error(invalidSession.getMessage(), invalidSession.getCode(), invalidSession.getMessage(), null));
+    }
     if (changesParticipation) {
       ErrorStatus forbidden = ErrorStatus.PARTICIPATION_OWNER_FORBIDDEN;
       errors.put("403", error(forbidden.getMessage(), forbidden.getCode(), forbidden.getMessage(), null));
@@ -191,8 +183,13 @@ public class SwaggerConfig {
           ? error("댓글 작성자가 아님", "COMMENT403", "댓글 작성자만 수정하거나 삭제할 수 있습니다.", null)
           : error("루틴 작성자가 아님", "ROUTINE403", "루틴 작성자만 수정하거나 삭제할 수 있습니다.", null));
     }
-    if (domain.contains("User") && handlerMethod.hasMethodAnnotation(PostMapping.class)) {
-      errors.put("409", error("중복된 닉네임", "USER4091", ErrorStatus.USER_DUPLICATE_NICKNAME.getMessage(), null));
+    if (testAccount && action.equals("register")) {
+      ErrorStatus occupied = ErrorStatus.TEST_SLOT_OCCUPIED;
+      errors.put("409", error("등록된 슬롯(TEST4092) 또는 중복 닉네임(USER4091)", occupied.getCode(), occupied.getMessage(), null));
+    }
+    if (testAccount && action.equals("claim")) {
+      ErrorStatus inUse = ErrorStatus.TEST_ACCOUNT_IN_USE;
+      errors.put("409", error(inUse.getMessage(), inUse.getCode(), inUse.getMessage(), null));
     }
     if (updatesProfile) {
       errors.put("409", error("중복된 닉네임", "USER4091", ErrorStatus.USER_DUPLICATE_NICKNAME.getMessage(), null));
@@ -202,8 +199,7 @@ public class SwaggerConfig {
       errors.put("409", error(invalidState.getMessage(), invalidState.getCode(), invalidState.getMessage(), null));
     }
     if (loginUser != null || hasPathVariable) {
-      errors.put("404", error("대상 없음 (" + notFoundCode + (updatesProfile ? " · 이미지 없음 IMAGE404" : "")
-              + (loginUser != null ? " · 모르는 토큰 USER404" : "") + ")",
+      errors.put("404", error("대상 없음 (" + notFoundCode + (updatesProfile ? " · 이미지 없음 IMAGE404" : "") + ")",
           notFoundCode.split(" ")[0], "리소스를 찾을 수 없습니다.", null));
     }
     errors.put("500", error("서버 내부 오류", "COMMON500", "서버 내부 오류가 발생했습니다.", null));
