@@ -49,7 +49,7 @@ public class RoutineResponseDTO {
       @Schema(description = "루틴 제목", example = "갓생 아침 루틴") String title,
       @Schema(description = "루틴 소개 (없으면 null)", example = "출근 전 1시간으로 하루를 시작해요.") String content,
       @Schema(description = "작성자") Owner owner,
-      @Schema(description = "썸네일 = 첫 번째 스텝 이미지 URL", example = "https://neo8.duckdns.org/api/images/01KB0000000000000000DEF001") String thumbnailUrl,
+      @Schema(description = "썸네일 = 첫 번째 스텝 이미지 URL", example = "https://neo8.duckdns.org/api/images/01KB0000000000000000PHT001") String thumbnailUrl,
       @Schema(description = "스텝 개수", example = "3") long cardCount,
       @Schema(description = "좋아요 수", example = "0") long likeCount,
       @Schema(description = "참여자 수 (참여 중 + 완료, 취소 제외)", example = "0") long participantCount,
@@ -77,8 +77,8 @@ public class RoutineResponseDTO {
       @Schema(description = "스텝 제목", example = "기상 후 물 한 잔 마시기") String title,
       @Schema(description = "스텝 내용 (없으면 null)", example = "미지근한 물 500ml") String content,
       @Schema(description = "스텝 시간 HH:mm", type = "string", example = "07:00") @JsonFormat(pattern = "HH:mm") LocalTime time,
-      @Schema(description = "스텝 이미지 publicId (수정 요청에 그대로 재사용)", example = "01KB0000000000000000DEF001") String imageId,
-      @Schema(description = "스텝 이미지 URL (바로 표시)", example = "https://neo8.duckdns.org/api/images/01KB0000000000000000DEF001") String imageUrl
+      @Schema(description = "스텝 이미지 publicId (수정 요청에 그대로 재사용)", example = "01KB0000000000000000PHT001") String imageId,
+      @Schema(description = "스텝 이미지 URL (바로 표시)", example = "https://neo8.duckdns.org/api/images/01KB0000000000000000PHT001") String imageUrl
   ) {
   }
 }

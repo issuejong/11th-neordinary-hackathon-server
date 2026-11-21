@@ -36,7 +36,7 @@ public class RoutineRequestDTO {
 
   @Schema(name = "RoutineCardRequest", description = "루틴 카드")
   public record Card(
-      @Schema(description = "카드 이미지 publicId (필수, 이미지 업로드 API 응답의 imageId)", example = DemoData.IMAGE_ID,
+      @Schema(description = "카드 이미지 publicId (필수, 이미지 업로드 API 응답의 imageId)", example = DemoData.PHOTO_SUNRISE,
           requiredMode = Schema.RequiredMode.REQUIRED)
       @NotBlank(message = "카드 이미지는 필수입니다.")
       @Pattern(regexp = Ulid.REGEX, message = "올바른 이미지 ID 형식(ULID 26자)이 아닙니다.")

@@ -11,6 +11,26 @@ public final class DemoData {
   public static final String IMAGE_ID_2 = "01KB0000000000000000DEF002";
   public static final String IMAGE_ID_3 = "01KB0000000000000000DEF003";
 
+  /** 루틴 일러스트 이미지 (시스템 등록, DemoIllustrations로 생성) */
+  public static final String PHOTO_SUNRISE = "01KB0000000000000000PHT001";
+  public static final String PHOTO_WATER = "01KB0000000000000000PHT002";
+  public static final String PHOTO_STRETCH = "01KB0000000000000000PHT003";
+  public static final String PHOTO_NOTEBOOK = "01KB0000000000000000PHT004";
+  public static final String PHOTO_RUNNING = "01KB0000000000000000PHT005";
+  public static final String PHOTO_BOOK = "01KB0000000000000000PHT006";
+  public static final String PHOTO_NIGHT = "01KB0000000000000000PHT007";
+  public static final String PHOTO_COFFEE = "01KB0000000000000000PHT008";
+
+  /** 목록을 실제처럼 채우는 사용자 · 루틴 · 댓글 */
+  public static final String COFFEE_USER_ID = "01KB0000000000000000MEM004";
+  public static final String YOGA_USER_ID = "01KB0000000000000000MEM005";
+  public static final String CAFFEINE_ROUTINE_ID = "01KB0000000000000000RTN009";
+  public static final String YOGA_ROUTINE_ID = "01KB0000000000000000RTN010";
+  public static final String RUNNING_ROUTINE_ID = "01KB0000000000000000RTN011";
+  public static final String COMMENT_ID_3 = "01KB0000000000000000CMT003";
+  public static final String COMMENT_ID_4 = "01KB0000000000000000CMT004";
+  public static final String COMMENT_ID_5 = "01KB0000000000000000CMT005";
+
   /** 데모 사용자 publicId */
   public static final String USER_ID = "01KB0000000000000000MEM001";
   public static final String USER_NICKNAME = "데모 유저";
