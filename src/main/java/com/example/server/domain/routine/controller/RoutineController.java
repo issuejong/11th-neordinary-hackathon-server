@@ -50,6 +50,7 @@ public class RoutineController {
           """)
   @GetMapping
   public ApiResponse<RoutineResponseDTO.Page> list(
+      @LoginUser(required = false) Long userId,
       @Parameter(description = "정렬: latest(최신순), likes(좋아요순), participants(참여자순)",
           example = "latest", schema = @Schema(allowableValues = {"latest", "likes", "participants"}, defaultValue = "latest"))
       @RequestParam(defaultValue = "latest")
@@ -67,7 +68,7 @@ public class RoutineController {
       @Min(value = 1, message = "size는 1 이상이어야 합니다.")
       @Max(value = 50, message = "size는 50 이하여야 합니다.") int size
   ) {
-    return ApiResponse.onSuccess(queryService.getList(RoutineSort.from(sort), authorId, participantId, cursor, size));
+    return ApiResponse.onSuccess(queryService.getList(RoutineSort.from(sort), authorId, participantId, cursor, size, userId));
   }
 
   @Operation(summary = "루틴 생성", description = "카드 1~10장을 함께 등록합니다. 카드 이미지는 이미지 업로드 API로 먼저 올린 imageId를 사용합니다.")

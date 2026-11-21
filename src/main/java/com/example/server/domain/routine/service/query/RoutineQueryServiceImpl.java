@@ -10,7 +10,11 @@ import com.example.server.domain.routine.repository.RoutineRepository;
 import com.example.server.domain.routine.repository.projection.RoutineHeaderView;
 import com.example.server.domain.routine.repository.projection.RoutineSummaryView;
 import com.example.server.domain.routine.support.RoutineCursor;
+import com.example.server.domain.routine.repository.projection.RoutineListInteractionView;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import com.example.server.global.exception.BusinessException;
 import com.example.server.global.response.code.status.ErrorStatus;
 import lombok.RequiredArgsConstructor;
@@ -51,7 +55,7 @@ public class RoutineQueryServiceImpl implements RoutineQueryService {
   @Override
   @Transactional(readOnly = true)
   public RoutineResponseDTO.Page getList(RoutineSort sort, String authorId, String participantId, String cursor,
-      int size) {
+      int size, Long viewerId) {
     RoutineCursor from = RoutineCursor.decode(cursor, sort);
     Pageable limit = PageRequest.of(0, size + 1); // 한 개 더 조회해서 다음 페이지 여부 판단
     List<RoutineSummaryView> rows = switch (sort) {
@@ -63,7 +67,10 @@ public class RoutineQueryServiceImpl implements RoutineQueryService {
     boolean hasNext = rows.size() > size;
     List<RoutineSummaryView> page = hasNext ? rows.subList(0, size) : rows;
     String nextCursor = hasNext ? nextCursor(sort, page.getLast()) : null;
-    return RoutineConverter.toPage(page, routineRepository.countForList(authorId, participantId), size, nextCursor);
+    Map<String, RoutineListInteractionView> interactions = page.isEmpty() ? Map.of()
+        : routineRepository.findListInteractions(page.stream().map(RoutineSummaryView::publicId).toList(), viewerId)
+            .stream().collect(Collectors.toMap(RoutineListInteractionView::routineId, Function.identity()));
+    return RoutineConverter.toPage(page, interactions, routineRepository.countForList(authorId, participantId), size, nextCursor);
   }
 
   private static String nextCursor(RoutineSort sort, RoutineSummaryView last) {
