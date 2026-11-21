@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: 11th-neordinary-hackathon-server
+  profiles:
+    default: dev
+  jpa:
+    open-in-view: false
