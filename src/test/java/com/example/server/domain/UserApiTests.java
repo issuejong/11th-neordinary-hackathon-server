@@ -2,6 +2,7 @@ package com.example.server.domain;
 
 import static org.hamcrest.Matchers.in;
 import static org.hamcrest.Matchers.matchesPattern;
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -72,8 +73,42 @@ class UserApiTests {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.result.publicId").value(userId))
         .andExpect(jsonPath("$.result.nickname").value("야행성"))
+        .andExpect(jsonPath("$.result.bio").value(nullValue()))
         .andExpect(jsonPath("$.result.profileImagePublicId").value(imageId))
         .andExpect(jsonPath("$.result.deviceToken").doesNotHaveJsonPath());
+  }
+
+  @Test
+  void savesOptionalBioAndReturnsItInMyProfile() throws Exception {
+    String token = UUID.randomUUID().toString();
+    mvc.perform(create(token, """
+            {"nickname":"야행성","bio":"  매일 조금씩 운동해요.  "}
+            """))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.result.bio").value("매일 조금씩 운동해요."));
+
+    mvc.perform(get("/api/users/me").header(LoginUser.HEADER, token))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.result.bio").value("매일 조금씩 운동해요."));
+    mvc.perform(get("/api/users").header(LoginUser.HEADER, token))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.result[0].bio").value("매일 조금씩 운동해요."));
+  }
+
+  @Test
+  void acceptsNullBioAndRejectsMultilineOrLongBio() throws Exception {
+    String token = UUID.randomUUID().toString();
+    mvc.perform(create(token, "{\"nickname\":\"야행성\",\"bio\":\"첫 줄\\n둘째 줄\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.result.bio").isString());
+    mvc.perform(create(token, "{\"nickname\":\"야행성\",\"bio\":\"" + "가".repeat(101) + "\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.result.bio").isString());
+    mvc.perform(create(token, """
+            {"nickname":"야행성","bio":null}
+            """))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.result.bio").value(nullValue()));
   }
 
   @Test

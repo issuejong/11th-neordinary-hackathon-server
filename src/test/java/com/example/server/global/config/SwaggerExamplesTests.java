@@ -66,6 +66,23 @@ class SwaggerExamplesTests extends ApiTestSupport {
   }
 
   @Test
+  void commentListDeviceTokenIsOptionalButCommentCreationRequiresIt() throws Exception {
+    String docs = apiDocs();
+    String path = "$.paths['/api/routines/{routineId}/comments']";
+    List<Map<String, Object>> listParams = JsonPath.read(docs, path + ".get.parameters[*]");
+    List<Map<String, Object>> createParams = JsonPath.read(docs, path + ".post.parameters[*]");
+
+    assertThat(listParams).anySatisfy(parameter -> {
+      assertThat(parameter.get("name")).isEqualTo(LoginUser.HEADER);
+      assertThat(parameter.get("required")).isNotEqualTo(true);
+    });
+    assertThat(createParams).anySatisfy(parameter -> {
+      assertThat(parameter.get("name")).isEqualTo(LoginUser.HEADER);
+      assertThat(parameter.get("required")).isEqualTo(true);
+    });
+  }
+
+  @Test
   @DisplayName("요청 DTO의 모든 필드에 예시값이 있다")
   void requestSchemasHaveExamples() throws Exception {
     String docs = apiDocs();

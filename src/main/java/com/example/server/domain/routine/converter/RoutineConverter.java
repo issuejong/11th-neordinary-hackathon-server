@@ -4,12 +4,19 @@ import com.example.server.domain.image.converter.ImageConverter;
 import com.example.server.domain.routine.dto.RoutineResponseDTO;
 import com.example.server.domain.routine.repository.projection.RoutineCardView;
 import com.example.server.domain.routine.repository.projection.RoutineHeaderView;
+import com.example.server.domain.routine.repository.projection.RoutineInteractionView;
 import com.example.server.domain.routine.repository.projection.RoutineSummaryView;
 import java.util.List;
 
 public final class RoutineConverter {
 
   private RoutineConverter() {
+  }
+
+  public static RoutineResponseDTO.Interactions toInteractions(RoutineInteractionView view) {
+    String status = view.myParticipationStatus() == null ? "NOT_PARTICIPATING" : view.myParticipationStatus().name();
+    return new RoutineResponseDTO.Interactions(view.likeCount(), view.myLikeCount() > 0, view.inProgressCount(),
+        view.completedCount(), status);
   }
 
   public static RoutineResponseDTO.Detail toDetail(RoutineHeaderView header, List<RoutineCardView> cards,

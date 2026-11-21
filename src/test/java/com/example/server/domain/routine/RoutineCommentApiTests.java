@@ -54,6 +54,11 @@ class RoutineCommentApiTests extends ApiTestSupport {
         .andExpect(jsonPath("$.result[0].isMine").value(true))
         .andExpect(jsonPath("$.result[1].commentId").value(secondId))
         .andExpect(jsonPath("$.result[1].isMine").value(false));
+    mvc.perform(get(path))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.result[0].commentId").value(firstId))
+        .andExpect(jsonPath("$.result[0].isMine").value(false))
+        .andExpect(jsonPath("$.result[1].isMine").value(false));
 
     String firstPath = path + "/" + firstId;
     mvc.perform(patch(firstPath).header(LoginUser.HEADER, DEMO_TOKEN)
@@ -104,7 +109,11 @@ class RoutineCommentApiTests extends ApiTestSupport {
         """).andExpect(status().isBadRequest());
     createComment(path, DEMO_TOKEN, "{\"content\":\"" + "가".repeat(51) + "\"}")
         .andExpect(status().isBadRequest());
-    mvc.perform(get(path)).andExpect(status().isBadRequest());
+    mvc.perform(post(path).contentType(MediaType.APPLICATION_JSON).content(BODY))
+        .andExpect(status().isBadRequest());
+    mvc.perform(get(path).header(LoginUser.HEADER, "unknown-comment-viewer"))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.code").value("USER404"));
     mvc.perform(delete(path + "/invalid").header(LoginUser.HEADER, DEMO_TOKEN))
         .andExpect(status().isBadRequest());
   }
