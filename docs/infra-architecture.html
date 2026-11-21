@@ -133,6 +133,7 @@
     <li>Spring Boot 4.1 · Java 25 (Docker)</li>
     <li>min 1 / max 2 인스턴스 (상시 가동)</li>
     <li>1 vCPU · 1 GiB · 컨테이너 :8080</li>
+    <li>JVM 시간대 Asia/Seoul (KST)</li>
     <li>Ingress: <b>내부 + LB만 허용</b> (run.app 차단)</li>
     <li>Direct VPC egress → 사설 대역</li>
   </ul>
@@ -147,7 +148,7 @@
     <li><b>Public IP 없음</b> (외부 접근 불가)</li>
     <li>Private Service Access (VPC 피어링)</li>
     <li>앱 전용 계정 <span class="k">hackathon_app</span></li>
-    <li><b>이미지 업로드: LONGBLOB 저장</b></li>
+    <li><b>이미지: <span class="k">images</span> 테이블 MEDIUMBLOB</b></li>
   </ul>
 </div>
 <div class="badge" style="left:1488px; top:228px;">3</div>
