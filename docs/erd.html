@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>NEORDINARY HACKATHON 8조 · ERD</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.17.2/dist/mermaid.min.js" integrity="sha384-EOXBFmc3gx5mb+vn0vPvvGqACToJD24hhacX5Yx+8NUUQrHIle/Qi5Bg9o3zKwW2" crossorigin="anonymous"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 36px 44px; width: max-content; background: #f8fafc; color: #0f172a;
+         font-family: "Pretendard", "Apple SD Gothic Neo", sans-serif; }
+  h1 { font-size: 40px; margin: 0 0 6px; letter-spacing: -0.5px; }
+  .sub { color: #475569; font-size: 20px; margin-bottom: 22px; }
+  .wrap { display: flex; flex-direction: column; gap: 20px; width: max-content; }
+  .diagram { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px; }
+  .side { display: flex; flex-direction: row; gap: 16px; align-items: flex-start; }
+  .side .card { flex: 1; min-width: 0; }
+  .side .card:first-child { flex: 1.3; }
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px 24px; font-size: 19px; line-height: 1.6; }
+  .card h2 { font-size: 22px; margin: 0 0 12px; }
+  table { border-collapse: collapse; width: 100%; font-size: 18px; }
+  th, td { border-bottom: 1px solid #eef2f7; padding: 5px 4px; text-align: left; vertical-align: top; }
+  th { color: #64748b; font-weight: 600; }
+  code { font-family: Menlo, monospace; font-size: 16px; background: #f1f5f9; padding: 0 4px; border-radius: 4px; }
+  .k { display: inline-block; min-width: 34px; text-align: center; font-weight: 700; font-size: 15px; border-radius: 4px; padding: 0 4px; margin-right: 4px; }
+  .pk { background: #fde68a; } .fk { background: #bfdbfe; } .uk { background: #ddd6fe; }
+  ul { margin: 4px 0 0 16px; padding: 0; }
+  li { margin: 3px 0; }
+  .sym { font-family: Menlo, monospace; font-weight: 700; color: #1d4ed8; }
+</style>
+</head>
+<body>
+<h1>NEORDINARY HACKATHON 8조 · ERD</h1>
+<div class="sub">루틴 공유 서비스 · MySQL 8.4 (Cloud SQL) · 9개 테이블 / 외래 키 11개 — 현재 코드로 생성한 실제 스키마 기준</div>
+
+<div class="wrap">
+<div class="diagram">
+<pre class="mermaid">
+erDiagram
+  direction LR
+
+  images {
+    BIGINT id PK "AI"
+    VARCHAR(26) public_id UK "외부 노출 ID (ULID)"
+    VARCHAR(50) content_type "image/jpeg 등 (시그니처로 판별)"
+    INT_UNSIGNED byte_size "파일 크기"
+    MEDIUMBLOB data "이미지 바이너리 (DB 저장)"
+    BIGINT created_by "NULL = 시스템 기본 이미지"
+    BIGINT updated_by
+    DATETIME(6) created_at
+    DATETIME(6) updated_at
+    DATETIME(6) deleted_at "soft delete"
+    BIGINT deleted_by
+  }
+
+  users {
+    BIGINT id PK "AI"
+    VARCHAR(26) public_id UK "외부 노출 ID (ULID)"
+    VARCHAR(30) nickname "표시 이름"
+    VARCHAR(60) nickname_key UK "소문자 닉네임 (중복 방지)"
+    VARCHAR(100) bio "한 줄 소개 (NULL 허용)"
+    BIGINT profile_image_id FK "images.id"
+    BIGINT created_by
+    BIGINT updated_by
+    DATETIME(6) created_at
+    DATETIME(6) updated_at
+    DATETIME(6) deleted_at "soft delete"
+    BIGINT deleted_by
+  }
+
+  test_account_leases {
+    BIGINT id PK "AI"
+    INT slot UK "첫 화면 위치 1~7"
+    BIGINT user_id FK,UK "users.id"
+    VARCHAR(64) token_hash UK "세션 토큰 SHA-256"
+    DATETIME(6) expires_at "세션 만료"
+  }
+
+  routines {
+    BIGINT id PK "AI"
+    VARCHAR(26) public_id UK "외부 노출 ID (ULID)"
+    BIGINT user_id FK "작성자 users.id"
+    VARCHAR(30) title "제목 5~30자"
+    VARCHAR(500) content "소개 (NULL 허용)"
+    BIGINT created_by
+    BIGINT updated_by
+    DATETIME(6) created_at
+    DATETIME(6) updated_at
+    DATETIME(6) deleted_at "soft delete"
+    BIGINT deleted_by
+  }
+
+  routine_cards {
+    BIGINT id PK "AI"
+    VARCHAR(26) public_id UK "외부 노출 ID (ULID)"
+    BIGINT routine_id FK "routines.id"
+    TINYINT_UNSIGNED sort_order "1~10, UK(routine_id, sort_order)"
+    BIGINT image_id FK "images.id"
+    VARCHAR(30) title "제목 5~30자"
+    VARCHAR(100) content "내용 (NULL 허용)"
+    TIME card_time "HH:mm"
+    BIGINT created_by
+    BIGINT updated_by
+    DATETIME(6) created_at
+    DATETIME(6) updated_at
+  }
+
+  routine_comments {
+    BIGINT id PK "AI"
+    VARCHAR(26) public_id UK "외부 노출 ID (ULID)"
+    BIGINT routine_id FK "routines.id"
+    BIGINT user_id FK "작성자 users.id"
+    VARCHAR(50) content "1~50자"
+    BIGINT created_by
+    BIGINT updated_by
+    DATETIME(6) created_at
+    DATETIME(6) updated_at
+    DATETIME(6) deleted_at "soft delete"
+    BIGINT deleted_by
+  }
+
+  routine_likes {
+    BIGINT id PK "AI"
+    BIGINT routine_id FK "UK(routine_id, user_id)"
+    BIGINT user_id FK "users.id"
+    BIGINT created_by
+    BIGINT updated_by
+    DATETIME(6) created_at
+    DATETIME(6) updated_at
+    DATETIME(6) deleted_at "NULL = 좋아요 상태"
+    BIGINT deleted_by
+  }
+
+  routine_participations {
+    BIGINT id PK "AI"
+    BIGINT routine_id FK "UK(routine_id, user_id)"
+    BIGINT user_id FK "참여자 users.id"
+    ENUM status "IN_PROGRESS / COMPLETED"
+    DATETIME(6) joined_at
+    DATETIME(6) completed_at
+    TEXT work_json "함께하기 초안 / 결과"
+    BIGINT created_by
+    BIGINT updated_by
+    DATETIME(6) created_at
+    DATETIME(6) updated_at
+    DATETIME(6) deleted_at "NULL = 참여 중"
+    BIGINT deleted_by
+  }
+
+  routine_ranking_snapshots {
+    VARCHAR(26) public_id PK "커서용 스냅샷 ID"
+    ENUM sort "LATEST / LIKES / PARTICIPANTS"
+    VARCHAR(26) author_id "필터 (FK 아님)"
+    VARCHAR(26) participant_id "필터 (FK 아님)"
+    LONGTEXT ordered_ids "정렬된 루틴 public_id"
+    DATETIME(6) expires_at "생성 + 15분"
+  }
+
+  images ||--o{ users : "프로필 이미지"
+  users ||--o| test_account_leases : "테스트 계정 점유"
+  users ||--o{ routines : "작성"
+  routines ||--|{ routine_cards : "스텝 1~10개"
+  images ||--o{ routine_cards : "스텝 이미지"
+  routines ||--o{ routine_comments : "댓글"
+  users ||--o{ routine_comments : "댓글 작성"
+  routines ||--o{ routine_likes : "좋아요"
+  users ||--o{ routine_likes : "좋아요 누름"
+  routines ||--o{ routine_participations : "참여"
+  users ||--o{ routine_participations : "참여함"
+</pre>
+</div>
+
+<div class="side">
+  <div class="card">
+    <h2>관계 (외래 키 11개)</h2>
+    <table>
+      <tr><th>부모</th><th>자식 (FK)</th><th>관계</th></tr>
+      <tr><td><code>images</code></td><td><code>users.profile_image_id</code></td><td>1 : N</td></tr>
+      <tr><td><code>users</code></td><td><code>test_account_leases.user_id</code></td><td>1 : 0..1 (UK)</td></tr>
+      <tr><td><code>users</code></td><td><code>routines.user_id</code></td><td>1 : N</td></tr>
+      <tr><td><code>routines</code></td><td><code>routine_cards.routine_id</code></td><td>1 : 1..10</td></tr>
+      <tr><td><code>images</code></td><td><code>routine_cards.image_id</code></td><td>1 : N</td></tr>
+      <tr><td><code>routines</code></td><td><code>routine_comments.routine_id</code></td><td>1 : N</td></tr>
+      <tr><td><code>users</code></td><td><code>routine_comments.user_id</code></td><td>1 : N</td></tr>
+      <tr><td><code>routines</code></td><td><code>routine_likes.routine_id</code></td><td rowspan="2">users ↔ routines<br><b>N : M</b> (UK)</td></tr>
+      <tr><td><code>users</code></td><td><code>routine_likes.user_id</code></td></tr>
+      <tr><td><code>routines</code></td><td><code>routine_participations.routine_id</code></td><td rowspan="2">users ↔ routines<br><b>N : M</b> (UK)</td></tr>
+      <tr><td><code>users</code></td><td><code>routine_participations.user_id</code></td></tr>
+    </table>
+    <div style="margin-top:8px;color:#475569">모든 외래 키는 <code>ON DELETE / UPDATE RESTRICT</code>. 삭제는 <code>deleted_at</code> 소프트 삭제로 처리해 참조 무결성을 유지합니다.</div>
+  </div>
+
+  <div class="card">
+    <h2>표기</h2>
+    <div><span class="k pk">PK</span>기본 키 · <span class="k fk">FK</span>외래 키 · <span class="k uk">UK</span>유니크</div>
+    <ul>
+      <li><span class="sym">||──o{</span> 1 : 0..N &nbsp; <span class="sym">||──|{</span> 1 : 1..N &nbsp; <span class="sym">||──o|</span> 1 : 0..1</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>제약 · 규칙</h2>
+    <ul>
+      <li><b>외부 노출 ID 분리</b>: API는 <code>public_id</code>(ULID)만 사용, 내부 <code>id</code>(BIGINT)는 노출하지 않음</li>
+      <li><b>좋아요 · 참여 중복 방지</b>: <code>UK(routine_id, user_id)</code> — 취소는 행 삭제 대신 <code>deleted_at</code>, 다시 누르면 같은 행 복구</li>
+      <li><b>스텝 순서</b>: <code>UK(routine_id, sort_order)</code> + <code>CHECK(sort_order BETWEEN 1 AND 10)</code></li>
+      <li><b>참여 상태</b>: <code>IN_PROGRESS</code> → <code>COMPLETED</code>, 작성자 본인 참여는 API에서 차단</li>
+      <li><b>이미지</b>: 오브젝트 스토리지 없이 <code>images.data</code> MEDIUMBLOB에 저장 (최대 10MB)</li>
+      <li><b>감사 컬럼</b>: <code>created_by / updated_by / deleted_by</code>는 작업한 <code>users.id</code> 기록용 (FK 미설정)</li>
+      <li><b>랭킹 스냅샷</b>: 좋아요순 · 참여순 커서용 임시 데이터로 다른 테이블과 FK 없이 <code>public_id</code>로만 참조</li>
+    </ul>
+  </div>
+</div>
+</div>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: "base",
+    themeVariables: {
+      fontFamily: "Pretendard, Apple SD Gothic Neo, sans-serif",
+      fontSize: "15px",
+      primaryColor: "#eff6ff",
+      primaryBorderColor: "#3b82f6",
+      primaryTextColor: "#0f172a",
+      lineColor: "#334155",
+      tertiaryColor: "#ffffff"
+    },
+    er: { layoutDirection: "LR", minEntityWidth: 120, entityPadding: 12, useMaxWidth: false }
+  });
+</script>
+</body>
+</html>
