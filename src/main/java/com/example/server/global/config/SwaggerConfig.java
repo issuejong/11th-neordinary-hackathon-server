@@ -3,6 +3,7 @@ package com.example.server.global.config;
 import com.example.server.global.auth.LoginUser;
 import com.example.server.global.init.DemoData;
 import com.example.server.global.response.code.status.ErrorStatus;
+import com.example.server.global.util.Ulid;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
@@ -72,9 +73,10 @@ public class SwaggerConfig {
         - 시각(`createdAt` 등)은 **KST(Asia/Seoul)** 기준 `yyyy-MM-dd'T'HH:mm:ss.SSSSSS` (시간대 표기 없음), 스텝 시간은 `HH:mm`.
 
         ### 인증 (임시)
-        - 로그인 사용자가 필요한 API는 헤더 **`X-Device-Token: <기기 토큰>`** 을 보냅니다.
+        - 첫 화면에서 `GET /api/users`로 기기의 프로필을 조회하고, `POST /api/users`로 프로필을 추가합니다.
+        - 프로필을 선택한 후에는 **`X-Device-Token`** 과 **`X-User-Id`**(선택한 프로필의 publicId)를 보냅니다.
         - 댓글 목록은 기기 토큰 없이 조회할 수 있습니다. 토큰을 보내면 내 댓글에 `isMine: true`가 표시됩니다.
-        - 처음엔 `POST /api/users`로 가입하고, 이후 같은 토큰으로 호출합니다. 모르는 토큰이면 `404 USER404`.
+        - 프로필이 한 개면 `X-User-Id`를 생략할 수 있습니다. 토큰에 해당 프로필이 없으면 `404 USER404`를 반환합니다.
         - Swagger 예시값은 데모 사용자 토큰(`%s`)이라 그대로 Execute 하면 됩니다.
 
         ### 루틴 만들기 흐름
@@ -125,6 +127,8 @@ public class SwaggerConfig {
           .orElse(null);
       if (loginUser != null) {
         String exampleToken = loginUser.example().isEmpty() ? DemoData.USER_DEVICE_TOKEN : loginUser.example();
+        String exampleUserId = exampleToken.equals(DemoData.PARTICIPANT_DEVICE_TOKEN)
+            ? DemoData.PARTICIPANT_ID : DemoData.USER_ID;
         operation.addParametersItem(new HeaderParameter()
             .name(LoginUser.HEADER)
             .required(loginUser.required())
@@ -133,6 +137,12 @@ public class SwaggerConfig {
                 : "선택 헤더. 생략하면 사용자별 상태를 표시하지 않습니다.")
             .example(exampleToken)
             .schema(new StringSchema()));
+        operation.addParametersItem(new HeaderParameter()
+            .name(LoginUser.USER_ID_HEADER)
+            .required(false)
+            .description("선택한 사용자 publicId. 같은 기기 토큰에 활성 프로필이 여러 개면 필수입니다.")
+            .example(exampleUserId)
+            .schema(new StringSchema().pattern(Ulid.REGEX)));
       }
       markCreated(operation, handlerMethod);
       if (!handlerMethod.getMethod().getDeclaringClass().getPackageName().endsWith(".health")) {
@@ -169,7 +179,9 @@ public class SwaggerConfig {
 
     Map<String, ApiResponse> errors = new LinkedHashMap<>();
     errors.put("400", error("입력값 오류 (COMMON400 등) — result에 필드별 메시지"
-        + (requiresToken ? " / X-Device-Token 헤더 누락" : ""), "COMMON400", "요청 형식이 올바르지 않습니다.",
+        + (requiresToken ? " / X-Device-Token 헤더 누락" : "")
+        + (loginUser != null ? " / 기기에 프로필이 여러 개일 때 X-User-Id 누락 (USER4002)" : ""),
+        "COMMON400", "요청 형식이 올바르지 않습니다.",
         Map.of("필드명", "오류 메시지")));
     if (changesParticipation) {
       ErrorStatus forbidden = ErrorStatus.PARTICIPATION_OWNER_FORBIDDEN;
@@ -180,7 +192,7 @@ public class SwaggerConfig {
           : error("루틴 작성자가 아님", "ROUTINE403", "루틴 작성자만 수정하거나 삭제할 수 있습니다.", null));
     }
     if (domain.contains("User") && handlerMethod.hasMethodAnnotation(PostMapping.class)) {
-      errors.put("409", error("이미 가입된 기기 토큰 또는 중복된 닉네임", "COMMON409", "이미 처리된 요청이거나 데이터가 충돌합니다.", null));
+      errors.put("409", error("중복된 닉네임", "USER4091", ErrorStatus.USER_DUPLICATE_NICKNAME.getMessage(), null));
     }
     if (updatesProfile) {
       errors.put("409", error("중복된 닉네임", "USER4091", ErrorStatus.USER_DUPLICATE_NICKNAME.getMessage(), null));

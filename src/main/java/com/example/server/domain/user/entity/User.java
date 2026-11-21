@@ -20,9 +20,9 @@ import org.hibernate.type.SqlTypes;
 @Entity(name = "AppUser")
 @Table(name = "users", uniqueConstraints = {
     @UniqueConstraint(name = "uk_users_public_id", columnNames = "public_id"),
-    @UniqueConstraint(name = "uk_users_device_token", columnNames = "device_token"),
     @UniqueConstraint(name = "uk_users_nickname_key", columnNames = "nickname_key")
 }, indexes = {
+    @Index(name = "idx_users_device_token", columnList = "device_token"),
     @Index(name = "idx_users_profile_image", columnList = "profile_image_id")
 })
 @Getter

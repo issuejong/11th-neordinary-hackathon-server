@@ -23,6 +23,7 @@ public enum ErrorStatus implements BaseCode {
   // 사용자 (임시 인증: X-Device-Token 헤더)
   USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER404", "사용자를 찾을 수 없습니다."),
   USER_INVALID_NICKNAME(HttpStatus.BAD_REQUEST, "USER4001", "닉네임은 2자 이상 10자 이하여야 합니다."),
+  USER_SELECTION_REQUIRED(HttpStatus.BAD_REQUEST, "USER4002", "여러 프로필이 있습니다. X-User-Id에 선택한 사용자 ID를 보내 주세요."),
   USER_DUPLICATE_NICKNAME(HttpStatus.CONFLICT, "USER4091", "중복된 이름입니다. 다른 이름을 입력해 주세요."),
 
   // 이미지

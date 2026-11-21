@@ -39,9 +39,6 @@ public class UserCommandServiceImpl implements UserCommandService {
   @Override
   @Transactional
   public UserResponseDTO create(String deviceToken, UserRequestDTO.Create request) {
-    if (userRepository.existsByDeviceToken(deviceToken)) {
-      throw new BusinessException(ErrorStatus._CONFLICT);
-    }
     String nickname = request.nickname().strip();
     checkNicknameAvailability(nickname, null);
 
