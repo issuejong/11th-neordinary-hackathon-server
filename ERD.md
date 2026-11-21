@@ -263,5 +263,5 @@
 
 - **Apple 로그인**에서 프론트가 넘기는 값이 `identityToken`이면 서버에서 토큰을 검증하고, `sub`를 고유한 `users.apple_sub`에 저장하는 흐름을 적용합니다. 위 표의 `device_token`은 붙여넣은 스키마 기준입니다.
 - **카드 10장 제한**은 API 검증(1~10개)과 DB의 `UNIQUE (routine_id, sort_order)` + `CHECK (sort_order BETWEEN 1 AND 10)`(`chk_cards_sort_order`)로 이중으로 보장합니다.
-- **이미지 업로드**는 API에서 형식(jpeg, png, heic, heif, webp, gif)과 크기(파일 10MB, 요청 20MB)를 검증합니다. `MEDIUMBLOB`의 저장 한도는 16 MiB보다 1바이트 작습니다.
+- **이미지 업로드**는 API에서 형식(jpg, png, heic, heif, webp, gif, 파일 시그니처로 판별), 용량(파일 10MB, 요청 20MB), 해상도(가로 · 세로 최대 8192px)를 검증합니다. `content_type`에는 판별된 실제 형식이 저장됩니다. `MEDIUMBLOB`의 저장 한도는 16 MiB보다 1바이트 작습니다.
 - **시각 컬럼**은 모두 마이크로초 정밀도(`DATETIME(6)`)입니다.

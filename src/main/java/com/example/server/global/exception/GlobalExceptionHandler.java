@@ -11,6 +11,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
+import org.springframework.validation.method.ParameterErrors;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -50,13 +51,21 @@ public class GlobalExceptionHandler {
     return failure(ErrorStatus._BAD_REQUEST, errors);
   }
 
-  /** @RequestParam, @PathVariable 등에 붙인 제약(@Min, @Size ...) 위반 */
+  /**
+   * @PathVariable, @RequestParam 제약(@Pattern, @Min ...) 위반.
+   * 경로 변수 제약이 있는 메서드는 @Valid 본문 오류도 이 예외로 오므로, 본문은 필드별로 풀어서 담는다.
+   */
   @ExceptionHandler(HandlerMethodValidationException.class)
   public ResponseEntity<ApiResponse<Map<String, String>>> handleInvalidParameter(
       HandlerMethodValidationException exception
   ) {
     Map<String, String> errors = new LinkedHashMap<>();
     exception.getParameterValidationResults().forEach(result -> {
+      if (result instanceof ParameterErrors bodyErrors) {
+        bodyErrors.getFieldErrors()
+            .forEach(error -> errors.putIfAbsent(error.getField(), error.getDefaultMessage()));
+        return;
+      }
       String name = result.getMethodParameter().getParameterName();
       result.getResolvableErrors()
           .forEach(error -> errors.putIfAbsent(name, error.getDefaultMessage()));

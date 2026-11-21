@@ -41,7 +41,7 @@ com.example.server
 ## 구현된 API (Swagger 예시값으로 바로 실행 가능)
 | 메서드 | 경로 | 설명 | 인증 헤더 |
 | --- | --- | --- | --- |
-| POST | `/api/images` | 이미지 업로드 (multipart `file`, jpeg/png/heic/heif/webp/gif, 10MB) → 201 | O |
+| POST | `/api/images` | 이미지 업로드 (multipart `file`) → 201. 정책은 아래 참고 | O |
 | GET | `/api/images/{imageId}` | 이미지 바이너리 조회 | — |
 | POST | `/api/routines` | 루틴 생성 (카드 1~10장) → 201 | O |
 | GET | `/api/routines/{routineId}` | 루틴 상세 (작성자, 카드, 좋아요·댓글 수) | — |
@@ -62,7 +62,10 @@ com.example.server
   - `@NoArgsConstructor(access = PROTECTED)`, `@Getter`만 쓰고 `@Setter`는 쓰지 않습니다. 값을 바꿀 때는 의도가 드러나는 메서드를 둡니다.
   - 연관관계는 `FetchType.LAZY`로 둡니다. 유니크 키와 인덱스 이름은 `uk_<테이블>_<컬럼>`, `idx_<테이블>_<용도>` 형식을 따릅니다.
   - 생성·수정 시각은 `BaseEntity`, 작업자 기록은 `ActorAuditedEntity`, 소프트 삭제는 `SoftDeletableEntity`(`markDeleted`)를 상속해서 씁니다.
-- **이미지**: 오브젝트 스토리지 없이 DB `images.data`(MEDIUMBLOB, 최대 16MB)에 저장합니다. 업로드 한도는 파일 10MB, 요청 20MB입니다(`application.yml`). 목록 조회에서는 바이너리를 빼고 내려줍니다.
+- **이미지**: 오브젝트 스토리지 없이 DB `images.data`(MEDIUMBLOB, 최대 16MB)에 저장합니다. 목록 조회에서는 바이너리를 빼고 내려줍니다.
+  - 업로드 정책: **10MB**(요청 전체 20MB, `application.yml`) / **가로 · 세로 최대 8192px** / **jpg, png, heic, heif, webp, gif**
+  - 형식은 클라이언트 Content-Type이 아니라 파일 시그니처로 판별합니다(`domain/image/support/ImageInspector`). 디코딩 없이 헤더만 읽습니다.
+  - iOS 권장: 업로드 전에 긴 변 2048px, JPEG 품질 0.8 정도로 줄이기 (원본이어도 한도 안이면 통과)
 - **트랜잭션**: command 서비스에는 `@Transactional`, query 서비스에는 `@Transactional(readOnly = true)`를 붙입니다. `open-in-view`는 꺼져 있습니다.
 
 ## 심사 기준 (모든 작업은 이 기준을 통과해야 합니다)
