@@ -22,6 +22,15 @@ class UserProfileApiTests extends ApiTestSupport {
   private static final int PROFILE_LIMIT = (int) DataSize.ofMegabytes(5).toBytes();
 
   @Test
+  void exposesPublicProfileAndReturnsNotFoundForUnknownUser() throws Exception {
+    String userId = newUser();
+    mvc.perform(get("/api/users/" + userId)).andExpect(status().isOk())
+        .andExpect(jsonPath("$.result.publicId").value(userId))
+        .andExpect(jsonPath("$.result.profileImagePublicId").isString());
+    mvc.perform(get("/api/users/" + UNKNOWN_ID)).andExpect(status().isNotFound());
+  }
+
+  @Test
   void updatesOwnProfileAndCanClearBioWithoutChangingOtherFields() throws Exception {
     String token = newUser();
     String imageId = imageId(uploadProfile(token, TestImages.png()));

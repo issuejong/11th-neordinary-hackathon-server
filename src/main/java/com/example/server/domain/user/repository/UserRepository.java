@@ -32,4 +32,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
       where u.id = :userId and u.deletedAt is null
       """)
   Optional<UserResponseDTO> findActiveProfileById(@Param("userId") Long userId);
+
+  @Query("""
+      select new com.example.server.domain.user.dto.UserResponseDTO(u.publicId, u.nickname, i.publicId, u.bio)
+      from AppUser u join u.profileImage i
+      where u.publicId = :publicId and u.deletedAt is null
+      """)
+  Optional<UserResponseDTO> findActiveProfileByPublicId(@Param("publicId") String publicId);
 }
