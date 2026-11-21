@@ -10,12 +10,15 @@ import tools.jackson.databind.ObjectMapper;
 import com.example.server.domain.routine.entity.Routine;
 import com.example.server.domain.routine.entity.RoutineCard;
 import com.example.server.domain.routine.entity.RoutineComment;
+import com.example.server.domain.routine.entity.RoutineLike;
 import com.example.server.domain.routine.entity.RoutineParticipation;
 import com.example.server.domain.routine.repository.RoutineCardRepository;
 import com.example.server.domain.routine.repository.RoutineCommentRepository;
+import com.example.server.domain.routine.repository.RoutineLikeRepository;
 import com.example.server.domain.routine.repository.RoutineParticipationRepository;
 import com.example.server.domain.routine.repository.RoutineRepository;
 import com.example.server.domain.user.entity.User;
+import com.example.server.global.init.DemoIllustrations.Theme;
 import com.example.server.global.util.Ulid;
 import jakarta.persistence.EntityManager;
 import java.awt.Color;
@@ -50,6 +53,7 @@ public class DemoDataInitializer implements ApplicationRunner {
   private final RoutineCardRepository cardRepository;
   private final RoutineCommentRepository commentRepository;
   private final RoutineParticipationRepository participationRepository;
+  private final RoutineLikeRepository likeRepository;
   private final TestAccountLeaseRepository leaseRepository;
   private final ObjectMapper json;
   private final EntityManager entityManager;
@@ -60,51 +64,76 @@ public class DemoDataInitializer implements ApplicationRunner {
     Image image1 = defaultImage(DemoData.IMAGE_ID, new Color(0xFF, 0xB4, 0x7A));
     Image image2 = defaultImage(DemoData.IMAGE_ID_2, new Color(0x8E, 0xC5, 0xFC));
     Image image3 = defaultImage(DemoData.IMAGE_ID_3, new Color(0xA7, 0xE3, 0xB5));
+    for (Theme theme : Theme.values()) {
+      photo(theme);
+    }
 
     User user = demoUser(DemoData.USER_ID, DemoData.USER_NICKNAME, image1);
-    User participant = demoUser(DemoData.PARTICIPANT_ID, "데모 참여자", image2);
-    User author = demoUser(DemoData.AUTHOR_ID, "데모 작성자", image3);
+    User runner = demoUser(DemoData.PARTICIPANT_ID, "러너지수", image2);
+    User bookworm = demoUser(DemoData.AUTHOR_ID, "책읽는곰", image3);
+    User coffee = demoUser(DemoData.COFFEE_USER_ID, "모닝커피", image1);
+    User yogi = demoUser(DemoData.YOGA_USER_ID, "요가하는민지", image2);
     registerReviewAccount(user);
 
-    if (!routineRepository.existsByPublicId(DemoData.ROUTINE_ID)) {
-      Routine routine = routineRepository.save(
-          new Routine(DemoData.ROUTINE_ID, user, "갓생 아침 루틴", "출근 전 1시간으로 하루를 시작해요."));
-      cardRepository.saveAll(List.of(
-          new RoutineCard(Ulid.generate(), routine, 1, image1, "기상 후 물 한 잔 마시기", "미지근한 물 500ml", LocalTime.of(7, 0)),
-          new RoutineCard(Ulid.generate(), routine, 2, image2, "10분 스트레칭 하기", "목, 어깨 위주로", LocalTime.of(7, 10)),
-          new RoutineCard(Ulid.generate(), routine, 3, image3, "오늘 할 일 세 개 적기", null, LocalTime.of(7, 30))));
-      log.info("Demo routine created: {}", DemoData.ROUTINE_ID);
+    // 데모 유저(8번 심사용) 루틴: 상세 · 수정 · 삭제 예시
+    syncRoutine(DemoData.ROUTINE_ID, user, "☀️ 미라클 모닝 루틴", "출근 전 1시간, 나만을 위한 시간으로 하루를 시작해요.", List.of(
+        card(Theme.SUNRISE, "알람 없이 6시에 일어나기", "커튼부터 열고 햇빛 보기", 6, 0),
+        card(Theme.WATER, "미지근한 물 한 잔 마시기", "자는 동안 빠진 수분 채우기", 6, 5),
+        card(Theme.STRETCH, "전신 스트레칭 10분", "목 · 어깨 · 허리 순서로 천천히", 6, 10),
+        card(Theme.NOTEBOOK, "오늘 할 일 세 가지 적기", "가장 중요한 일을 맨 위에", 6, 30)));
+    syncRoutine(DemoData.EDITABLE_ROUTINE_ID, user, "🏃 퇴근 후 30분 러닝", "하루 스트레스를 한강 바람에 날려 보내요.", List.of(
+        card(Theme.RUNNING, "5분 걷기로 몸 풀기", "발목 · 무릎 가볍게 돌리기", 19, 30),
+        card(Theme.RUNNING, "3km 천천히 달리기", "대화할 수 있는 속도로", 19, 35)));
+    syncRoutine(DemoData.DELETABLE_ROUTINE_ID, user, "🌙 꿀잠 수면 루틴", "자기 전 1시간은 화면 대신 나에게 집중해요.", List.of(
+        card(Theme.NIGHT, "23시에 휴대폰 내려놓기", "충전기는 침대에서 먼 곳에", 23, 0),
+        card(Theme.BOOK, "책 10쪽 읽고 불 끄기", null, 23, 10)));
+
+    // 책읽는곰 루틴: 함께하기(참여 · 초안 · 완료 · 결과) 예시 — 결과 관련은 스텝 1개(예시 본문과 같은 수)
+    syncRoutine(DemoData.JOIN_ROUTINE_ID, bookworm, "📚 자기 전 독서 20분", "하루 20분, 한 달이면 책 두 권을 읽어요.", List.of(
+        card(Theme.BOOK, "읽고 싶던 책 20분 읽기", "종이책이면 더 좋아요", 22, 30),
+        card(Theme.NOTEBOOK, "마음에 든 문장 한 줄 기록", null, 22, 50)));
+    syncRoutine(DemoData.DRAFT_ROUTINE_ID, bookworm, "🚶 점심 먹고 10분 산책", "식곤증을 걷기로 이겨내요.", List.of(
+        card(Theme.SUNRISE, "회사 근처 한 바퀴 걷기", "계단으로 내려가기", 12, 40)));
+    syncRoutine(DemoData.COMPLETE_ROUTINE_ID, bookworm, "💧 하루 물 2L 마시기", "텀블러 하나로 시작하는 수분 습관", List.of(
+        card(Theme.WATER, "500ml 텀블러 네 번 비우기", "알림을 2시간마다 맞춰두기", 9, 0)));
+    syncRoutine(DemoData.RESULT_EDIT_ROUTINE_ID, bookworm, "🍵 커피 대신 따뜻한 차", "오후 커피를 허브티로 바꿔봐요.", List.of(
+        card(Theme.COFFEE, "오후 3시 허브티 한 잔", "캐모마일이나 페퍼민트", 15, 0)));
+    syncRoutine(DemoData.RESULT_DELETE_ROUTINE_ID, bookworm, "🧘 아침 요가 15분", "굳은 몸을 깨우는 가벼운 요가", List.of(
+        card(Theme.STRETCH, "고양이 자세와 아기 자세", "호흡에 맞춰 천천히", 7, 0)));
+
+    // 목록을 실제처럼 채우는 인기 루틴
+    syncRoutine(DemoData.CAFFEINE_ROUTINE_ID, coffee, "☕ 카페인 줄이기 2주 챌린지", "하루 세 잔에서 한 잔으로, 2주면 충분해요.", List.of(
+        card(Theme.COFFEE, "아침 커피는 한 잔만", "오후엔 디카페인으로", 8, 30),
+        card(Theme.WATER, "커피 생각날 때 물 한 잔", null, 14, 0)));
+    syncRoutine(DemoData.YOGA_ROUTINE_ID, yogi, "🧘 저녁 요가로 하루 마무리", "20분이면 하루 피로가 풀려요.", List.of(
+        card(Theme.STRETCH, "골반 열기 스트레칭", "무리하지 않는 범위까지", 21, 0),
+        card(Theme.NIGHT, "누워서 5분 호흡 명상", "4초 들이쉬고 6초 내쉬기", 21, 20)));
+    syncRoutine(DemoData.RUNNING_ROUTINE_ID, runner, "🏃 주 3회 5km 러닝 습관", "월 · 수 · 금, 꾸준함이 속도를 이겨요.", List.of(
+        card(Theme.RUNNING, "5km 내 페이스로 달리기", "첫 1km는 천천히", 7, 0),
+        card(Theme.WATER, "달린 뒤 물 한 잔과 쿨다운", null, 7, 40)));
+
+    // 댓글 (CMT001 · CMT002는 Swagger 수정 · 삭제 예시라 데모 유저가 작성)
+    syncComment(DemoData.COMMENT_ID, DemoData.ROUTINE_ID, user, "내일부터 6시 기상 도전합니다! 💪");
+    syncComment(DemoData.DELETABLE_COMMENT_ID, DemoData.ROUTINE_ID, user, "스트레칭 순서 꿀팁이네요");
+    syncComment(DemoData.COMMENT_ID_3, DemoData.ROUTINE_ID, coffee, "3일째 하고 있는데 아침이 확실히 여유로워요 ☀️");
+    syncComment(DemoData.COMMENT_ID_4, DemoData.ROUTINE_ID, yogi, "물 한 잔이 생각보다 효과가 커요!");
+    syncComment(DemoData.COMMENT_ID_5, DemoData.RUNNING_ROUTINE_ID, coffee, "페이스 몇으로 뛰세요? 저도 같이 해볼게요");
+
+    // 좋아요 · 참여 (좋아요순 · 참여순 정렬이 의미 있게 보이도록)
+    for (User liker : List.of(runner, bookworm, coffee, yogi)) {
+      like(DemoData.ROUTINE_ID, liker);
     }
-    if (!routineRepository.existsByPublicId(DemoData.EDITABLE_ROUTINE_ID)) {
-      Routine routine = routineRepository.save(
-          new Routine(DemoData.EDITABLE_ROUTINE_ID, user, "수정 · 삭제 테스트용 루틴", "Swagger에서 수정/삭제를 시험해 보세요."));
-      cardRepository.save(
-          new RoutineCard(Ulid.generate(), routine, 1, image2, "자기 전 독서 20분", null, LocalTime.of(23, 0)));
-      log.info("Demo routine created: {}", DemoData.EDITABLE_ROUTINE_ID);
+    for (User liker : List.of(user, coffee, yogi)) {
+      like(DemoData.RUNNING_ROUTINE_ID, liker);
     }
-    if (!routineRepository.existsByPublicId(DemoData.DELETABLE_ROUTINE_ID)) {
-      Routine routine = routineRepository.save(
-          new Routine(DemoData.DELETABLE_ROUTINE_ID, user, "삭제 테스트용 루틴", "Swagger에서 삭제를 시험해 보세요. 10초 안에 자동 복구됩니다."));
-      cardRepository.save(
-          new RoutineCard(Ulid.generate(), routine, 1, image3, "삭제해도 다시 돌아와요", null, LocalTime.of(12, 0)));
-      log.info("Demo routine created: {}", DemoData.DELETABLE_ROUTINE_ID);
-    }
-    if (!commentRepository.existsByPublicId(DemoData.DELETABLE_COMMENT_ID)) {
-      routineRepository.findByPublicIdAndDeletedAtIsNull(DemoData.ROUTINE_ID)
-          .ifPresent(routine -> commentRepository.save(
-              new RoutineComment(DemoData.DELETABLE_COMMENT_ID, routine, user, "삭제 예시용 댓글이에요.")));
-    }
-    if (!commentRepository.existsByPublicId(DemoData.COMMENT_ID)) {
-      routineRepository.findByPublicIdAndDeletedAtIsNull(DemoData.ROUTINE_ID)
-          .ifPresent(routine -> commentRepository.save(
-              new RoutineComment(DemoData.COMMENT_ID, routine, user, "오늘부터 해볼게요.")));
-    }
-    // 함께하기 예시 루틴 (데모 작성자 소유, 스텝 1개: Swagger 예시 본문의 스텝 수와 같음)
-    participationRoutine(DemoData.JOIN_ROUTINE_ID, author, "함께하기 예시: 참여 · 초안", image1);
-    participationRoutine(DemoData.DRAFT_ROUTINE_ID, author, "함께하기 예시: 초안", image3);
-    participationRoutine(DemoData.COMPLETE_ROUTINE_ID, author, "함께하기 예시: 완료 제출", image2);
-    participationRoutine(DemoData.RESULT_EDIT_ROUTINE_ID, author, "함께하기 예시: 결과 수정", image3);
-    participationRoutine(DemoData.RESULT_DELETE_ROUTINE_ID, author, "함께하기 예시: 결과 삭제", image1);
+    like(DemoData.CAFFEINE_ROUTINE_ID, yogi);
+    like(DemoData.CAFFEINE_ROUTINE_ID, runner);
+    like(DemoData.YOGA_ROUTINE_ID, coffee);
+    like(DemoData.JOIN_ROUTINE_ID, yogi);
+    inProgress(DemoData.ROUTINE_ID, coffee);
+    inProgress(DemoData.ROUTINE_ID, yogi);
+    inProgress(DemoData.RUNNING_ROUTINE_ID, coffee);
+    inProgress(DemoData.YOGA_ROUTINE_ID, bookworm);
     restoreDeletedDemoData(); // 재배포 직후에도 바로 복구
   }
 
@@ -116,13 +145,78 @@ public class DemoDataInitializer implements ApplicationRunner {
     }
   }
 
-  private void participationRoutine(String publicId, User author, String title, Image image) {
-    if (!routineRepository.existsByPublicId(publicId)) {
-      Routine routine = routineRepository.save(
-          new Routine(publicId, author, title, "Swagger 함께하기 예시용 루틴입니다. 10초마다 원래 상태로 돌아갑니다."));
-      cardRepository.save(new RoutineCard(Ulid.generate(), routine, 1, image, "예시 스텝 하나", null, LocalTime.of(8, 0)));
-      log.info("Demo routine created: {}", publicId);
+  private record CardSpec(Theme theme, String title, String content, LocalTime time) {
+  }
+
+  private static CardSpec card(Theme theme, String title, String content, int hour, int minute) {
+    return new CardSpec(theme, title, content, LocalTime.of(hour, minute));
+  }
+
+  /** 없으면 만들고, 내용(제목 · 소개 · 스텝)이 다르면 이 내용으로 맞춘다. 고정 publicId라 Swagger 예시는 그대로 동작한다. */
+  private void syncRoutine(String publicId, User owner, String title, String content, List<CardSpec> cards) {
+    Routine routine = routineRepository.findByPublicId(publicId).orElse(null);
+    if (routine == null) {
+      routine = routineRepository.save(new Routine(publicId, owner, title, content));
+    } else if (!title.equals(routine.getTitle()) || !java.util.Objects.equals(content, routine.getContent())) {
+      routine.update(title, content, owner.getId());
     }
+    List<RoutineCard> existing = cardRepository.findAllByRoutine_IdOrderBySortOrderAsc(routine.getId());
+    boolean same = existing.size() == cards.size();
+    for (int i = 0; same && i < cards.size(); i++) {
+      RoutineCard e = existing.get(i);
+      CardSpec c = cards.get(i);
+      same = e.getTitle().equals(c.title()) && java.util.Objects.equals(e.getContent(), c.content())
+          && c.time().equals(e.getCardTime()) && photoId(c.theme()).equals(e.getImage().getPublicId());
+    }
+    if (!same) {
+      cardRepository.deleteAll(existing);
+      cardRepository.flush(); // (routine_id, sort_order) 유니크 충돌 방지
+      for (int i = 0; i < cards.size(); i++) {
+        CardSpec c = cards.get(i);
+        cardRepository.save(new RoutineCard(Ulid.generate(), routine, i + 1, photo(c.theme()), c.title(), c.content(), c.time()));
+      }
+      log.info("Demo routine synced: {} {}", publicId, title);
+    }
+  }
+
+  private void syncComment(String publicId, String routineId, User author, String content) {
+    RoutineComment comment = commentRepository.findByPublicId(publicId).orElse(null);
+    if (comment == null) {
+      routineRepository.findByPublicIdAndDeletedAtIsNull(routineId)
+          .ifPresent(routine -> commentRepository.save(new RoutineComment(publicId, routine, author, content)));
+    } else if (!content.equals(comment.getContent())) {
+      comment.edit(content);
+    }
+  }
+
+  private void like(String routineId, User user) {
+    routineRepository.findByPublicIdAndDeletedAtIsNull(routineId).ifPresent(routine -> likeRepository
+        .findByRoutine_IdAndUser_Id(routine.getId(), user.getId())
+        .ifPresentOrElse(like -> {
+          if (like.getDeletedAt() != null) {
+            like.likeAgain();
+          }
+        }, () -> likeRepository.save(new RoutineLike(routine, user))));
+  }
+
+  private static String photoId(Theme theme) {
+    return switch (theme) {
+      case SUNRISE -> DemoData.PHOTO_SUNRISE;
+      case WATER -> DemoData.PHOTO_WATER;
+      case STRETCH -> DemoData.PHOTO_STRETCH;
+      case NOTEBOOK -> DemoData.PHOTO_NOTEBOOK;
+      case RUNNING -> DemoData.PHOTO_RUNNING;
+      case BOOK -> DemoData.PHOTO_BOOK;
+      case NIGHT -> DemoData.PHOTO_NIGHT;
+      case COFFEE -> DemoData.PHOTO_COFFEE;
+    };
+  }
+
+  /** 루틴 일러스트 이미지 (시스템 등록). 없으면 그려서 저장한다. */
+  private Image photo(Theme theme) {
+    String publicId = photoId(theme);
+    return imageRepository.findByPublicIdAndDeletedAtIsNull(publicId)
+        .orElseGet(() -> imageRepository.save(new Image(publicId, "image/png", DemoIllustrations.png(theme), null)));
   }
 
   /**
@@ -134,7 +228,8 @@ public class DemoDataInitializer implements ApplicationRunner {
   public void restoreDeletedDemoData() {
     for (String publicId : List.of(DemoData.ROUTINE_ID, DemoData.EDITABLE_ROUTINE_ID, DemoData.DELETABLE_ROUTINE_ID,
         DemoData.JOIN_ROUTINE_ID, DemoData.DRAFT_ROUTINE_ID, DemoData.COMPLETE_ROUTINE_ID, DemoData.RESULT_EDIT_ROUTINE_ID,
-        DemoData.RESULT_DELETE_ROUTINE_ID)) {
+        DemoData.RESULT_DELETE_ROUTINE_ID, DemoData.CAFFEINE_ROUTINE_ID, DemoData.YOGA_ROUTINE_ID,
+        DemoData.RUNNING_ROUTINE_ID)) {
       routineRepository.findByPublicId(publicId)
           .filter(routine -> routine.getDeletedAt() != null)
           .ifPresent(routine -> {
@@ -167,9 +262,15 @@ public class DemoDataInitializer implements ApplicationRunner {
     inProgress(DemoData.JOIN_ROUTINE_ID, user);
     inProgress(DemoData.DRAFT_ROUTINE_ID, user);
     inProgress(DemoData.COMPLETE_ROUTINE_ID, user);
-    published(DemoData.RESULT_EDIT_ROUTINE_ID, user);
-    published(DemoData.RESULT_DELETE_ROUTINE_ID, user);
-    published(DemoData.ROUTINE_ID, participant);
+    published(DemoData.RESULT_EDIT_ROUTINE_ID, user, new Draft("나만의 오후 티타임", "커피 대신 차를 마시니 저녁에 잠이 잘 와요.",
+        List.of(new DraftCard(DemoData.PHOTO_COFFEE, "오후 3시 루이보스티 한 잔", "꿀 한 스푼 넣어서", "15:00"))));
+    published(DemoData.RESULT_DELETE_ROUTINE_ID, user, new Draft("출근 전 요가 15분", "알람보다 10분 일찍 일어나서 해봤어요.",
+        List.of(new DraftCard(DemoData.PHOTO_STRETCH, "고양이 자세 5번 반복", null, "06:50"))));
+    published(DemoData.ROUTINE_ID, participant, new Draft("러너의 미라클 모닝", "스트레칭 대신 가벼운 조깅을 넣어봤어요.", List.of(
+        new DraftCard(DemoData.PHOTO_SUNRISE, "5시 50분 기상", "알람은 한 번만", "05:50"),
+        new DraftCard(DemoData.PHOTO_WATER, "물 한 잔 마시기", null, "05:55"),
+        new DraftCard(DemoData.PHOTO_RUNNING, "동네 2km 조깅", "숨이 찰 듯 말 듯", "06:05"),
+        new DraftCard(DemoData.PHOTO_NOTEBOOK, "오늘 할 일 세 가지 적기", null, "06:40"))));
   }
 
   private void inProgress(String routineId, User user) {
@@ -185,18 +286,25 @@ public class DemoDataInitializer implements ApplicationRunner {
     }
   }
 
-  private void published(String routineId, User user) {
+  private void published(String routineId, User user, Draft work) {
     RoutineParticipation participation = participation(routineId, user);
-    if (participation == null || participation.hasPublishedWork()) {
+    if (participation == null) {
+      return;
+    }
+    String workJson = json.writeValueAsString(work);
+    if (participation.hasPublishedWork()) {
+      if (!workJson.equals(participation.getWorkJson())) {
+        participation.saveWork(workJson); // 예시 수정으로 바뀐 결과를 원래 내용으로
+      }
       return;
     }
     if (participation.getDeletedAt() != null) {
       participation.joinAgain(LocalDateTime.now());
     }
-    participation.saveWork(json.writeValueAsString(new Draft("함께한 나의 하루", "예시 루틴을 따라 해봤어요.",
-        List.of(new DraftCard(DemoData.IMAGE_ID, "예시 스텝 하나", null, "08:00")))));
+    participation.saveWork(workJson);
     participation.complete(LocalDateTime.now());
   }
+
 
   /** 없으면 "참여 중"으로 새로 만든다. 루틴이 없으면 null */
   private RoutineParticipation participation(String routineId, User user) {
@@ -223,7 +331,11 @@ public class DemoDataInitializer implements ApplicationRunner {
         .setParameter("publicId", publicId)
         .getResultList();
     if (!users.isEmpty()) {
-      return users.getFirst();
+      User existing = users.getFirst();
+      if (!nickname.equals(existing.getNickname()) && !DemoData.USER_ID.equals(publicId)) {
+        existing.changeNickname(nickname); // 예전 데모 닉네임을 실제 같은 닉네임으로 (심사용 데모 유저는 제외)
+      }
+      return existing;
     }
     User user = new User(publicId, nickname, profileImage);
     entityManager.persist(user);

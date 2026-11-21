@@ -80,7 +80,7 @@ public class ImageController {
               schema = @io.swagger.v3.oas.annotations.media.Schema(type = "string", format = "binary"))))
   @GetMapping("/{imageId}")
   public ResponseEntity<byte[]> find(
-      @Parameter(description = "이미지 publicId", example = DemoData.IMAGE_ID)
+      @Parameter(description = "이미지 publicId", example = DemoData.PHOTO_SUNRISE)
       @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String imageId
   ) {
     ImageResponseDTO.File file = queryService.getFile(imageId);
