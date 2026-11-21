@@ -18,9 +18,9 @@ public class RoutineRequestDTO {
   /** 루틴 생성 / 전체 수정 공용 요청 (수정 시 카드 목록은 통째로 교체) */
   @Schema(description = "루틴 생성 · 수정 요청")
   public record Save(
-      @Schema(description = "루틴 제목 (1~30자)", example = "갓생 아침 루틴", requiredMode = Schema.RequiredMode.REQUIRED)
+      @Schema(description = "루틴 제목 (필수, 5~30자)", example = "갓생 아침 루틴", requiredMode = Schema.RequiredMode.REQUIRED)
       @NotBlank(message = "루틴 제목은 필수입니다.")
-      @Size(max = 30, message = "루틴 제목은 30자 이하여야 합니다.")
+      @Size(min = 5, max = 30, message = "루틴 제목은 5자 이상 30자 이하여야 합니다.")
       String title,
 
       @Schema(description = "루틴 소개 (선택, 최대 100자)", example = "출근 전 1시간으로 하루를 시작해요.")
@@ -36,13 +36,13 @@ public class RoutineRequestDTO {
 
   @Schema(description = "루틴 카드")
   public record Card(
-      @Schema(description = "카드 이미지 publicId (이미지 업로드 API 응답의 imageId)", example = DemoData.IMAGE_ID,
+      @Schema(description = "카드 이미지 publicId (필수, 이미지 업로드 API 응답의 imageId)", example = DemoData.IMAGE_ID,
           requiredMode = Schema.RequiredMode.REQUIRED)
       @NotBlank(message = "카드 이미지는 필수입니다.")
       @Pattern(regexp = Ulid.REGEX, message = "올바른 이미지 ID 형식(ULID 26자)이 아닙니다.")
       String imageId,
 
-      @Schema(description = "카드 제목 (5~30자)", example = "기상 후 물 한 잔 마시기", requiredMode = Schema.RequiredMode.REQUIRED)
+      @Schema(description = "카드 제목 (필수, 5~30자)", example = "기상 후 물 한 잔 마시기", requiredMode = Schema.RequiredMode.REQUIRED)
       @NotBlank(message = "카드 제목은 필수입니다.")
       @Size(min = 5, max = 30, message = "카드 제목은 5자 이상 30자 이하여야 합니다.")
       String title,
@@ -51,7 +51,9 @@ public class RoutineRequestDTO {
       @Size(max = 100, message = "카드 내용은 100자 이하여야 합니다.")
       String content,
 
-      @Schema(description = "시간 HH:mm (선택)", type = "string", pattern = "HH:mm", example = "07:00")
+      @Schema(description = "시간 (필수, HH:mm)", type = "string", pattern = "HH:mm", example = "07:00",
+          requiredMode = Schema.RequiredMode.REQUIRED)
+      @NotNull(message = "시간은 필수입니다.")
       @JsonFormat(pattern = "HH:mm")
       LocalTime time
   ) {

@@ -54,7 +54,7 @@ public class DemoDataInitializer implements ApplicationRunner {
       cardRepository.saveAll(List.of(
           new RoutineCard(Ulid.generate(), routine, 1, image1, "기상 후 물 한 잔 마시기", "미지근한 물 500ml", LocalTime.of(7, 0)),
           new RoutineCard(Ulid.generate(), routine, 2, image2, "10분 스트레칭 하기", "목, 어깨 위주로", LocalTime.of(7, 10)),
-          new RoutineCard(Ulid.generate(), routine, 3, image3, "오늘 할 일 세 개 적기", null, null)));
+          new RoutineCard(Ulid.generate(), routine, 3, image3, "오늘 할 일 세 개 적기", null, LocalTime.of(7, 30))));
       log.info("Demo routine created: {}", DemoData.ROUTINE_ID);
     }
     if (!routineRepository.existsByPublicId(DemoData.EDITABLE_ROUTINE_ID)) {

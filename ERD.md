@@ -91,8 +91,8 @@
 | `id` | `BIGINT` | NO | PK, AI | — | 내부 식별자(PK) |
 | `public_id` | `CHAR(26)` | NO | — | — | 외부 노출용 식별자(ULID) |
 | `user_id` | `BIGINT` | NO | FK | — | 소유자 users.id |
-| `title` | `VARCHAR(30)` | NO | — | 루틴 제목 |
-| `content` | `VARCHAR(100)` | YES | — | 루틴 소개 |
+| `title` | `VARCHAR(30)` | NO | — | — | 루틴 제목 5~30자(필수) |
+| `content` | `VARCHAR(100)` | YES | — | — | 루틴 소개 최대 100자(선택) |
 | `created_at` | `DATETIME` | NO | — | `CURRENT_TIMESTAMP` | 생성일시 |
 | `created_by` | `BIGINT` | NO | — | — | 생성 주체 user id |
 | `updated_at` | `DATETIME` | NO | — | `CURRENT_TIMESTAMP` | 수정일시 |
@@ -129,7 +129,7 @@
 | `image_id` | `BIGINT` | NO | FK | — | 카드 이미지 images.id(필수) |
 | `title` | `VARCHAR(30)` | NO | — | — | 제목 5~30자(필수) |
 | `content` | `VARCHAR(100)` | YES | — | — | 내용 최대 100자(선택) |
-| `card_time` | `TIME` | YES | — | — | 시간 HH:MM(선택) |
+| `card_time` | `TIME` | YES | — | — | 시간 HH:MM(API에서 필수 검증) |
 | `created_at` | `DATETIME` | NO | — | `CURRENT_TIMESTAMP` | 생성일시 |
 | `created_by` | `BIGINT` | NO | — | — | 생성 주체 user id |
 | `updated_at` | `DATETIME` | NO | — | `CURRENT_TIMESTAMP` | 수정일시 |

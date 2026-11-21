@@ -48,7 +48,7 @@ class RoutineImageApiTests {
     return """
         {"title": "%s", "content": "소개", "cards": [
           {"imageId": "%s", "title": "%s", "content": "내용", "time": "07:30"},
-          {"imageId": "%s", "title": "두 번째 카드 제목"}
+          {"imageId": "%s", "title": "두 번째 카드 제목", "time": "08:00"}
         ]}
         """.formatted(title, imageId, cardTitle, DemoData.IMAGE_ID_2);
   }
@@ -56,7 +56,7 @@ class RoutineImageApiTests {
   private String createRoutine() throws Exception {
     String json = mvc.perform(post("/api/v1/routines").header(LoginUser.HEADER, USER)
             .contentType(MediaType.APPLICATION_JSON)
-            .content(body("새 루틴", "첫 번째 카드 제목", DemoData.IMAGE_ID)))
+            .content(body("새로운 루틴", "첫 번째 카드 제목", DemoData.IMAGE_ID)))
         .andExpect(status().isCreated())
         .andReturn().getResponse().getContentAsString();
     return JsonPath.read(json, "$.result.routineId");
@@ -158,7 +158,7 @@ class RoutineImageApiTests {
             .contentType(MediaType.APPLICATION_JSON)
             .content("""
                 {"title": "수정된 루틴", "cards": [
-                  {"imageId": "%s", "title": "바뀐 카드 제목입니다"}
+                  {"imageId": "%s", "title": "바뀐 카드 제목입니다", "time": "09:00"}
                 ]}
                 """.formatted(DemoData.IMAGE_ID_3)))
         .andExpect(status().isOk())
@@ -186,7 +186,17 @@ class RoutineImageApiTests {
             .content(body("루틴", "짧음", DemoData.IMAGE_ID)))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("COMMON400"))
+        .andExpect(jsonPath("$.result.title").isString())
         .andExpect(jsonPath("$.result['cards[0].title']").isString());
+
+    // 시간 누락
+    mvc.perform(post("/api/v1/routines").header(LoginUser.HEADER, USER)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("""
+                {"title": "저녁 루틴입니다", "cards": [{"imageId": "%s", "title": "카드 제목입니다"}]}
+                """.formatted(DemoData.IMAGE_ID)))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.result['cards[0].time']").isString());
 
     // 제목 공백, 카드 없음
     mvc.perform(post("/api/v1/routines").header(LoginUser.HEADER, USER)
@@ -202,22 +212,22 @@ class RoutineImageApiTests {
     mvc.perform(post("/api/v1/routines").header(LoginUser.HEADER, USER)
             .contentType(MediaType.APPLICATION_JSON)
             .content("""
-                {"title": "루틴", "cards": [{"imageId": "%s", "title": "카드 제목입니다", "time": "25:99"}]}
+                {"title": "저녁 루틴입니다", "cards": [{"imageId": "%s", "title": "카드 제목입니다", "time": "25:99"}]}
                 """.formatted(DemoData.IMAGE_ID)))
         .andExpect(status().isBadRequest());
 
     // 카드 11장
-    String card = "{\"imageId\": \"%s\", \"title\": \"카드 제목입니다\"}".formatted(DemoData.IMAGE_ID);
+    String card = "{\"imageId\": \"%s\", \"title\": \"카드 제목입니다\", \"time\": \"07:00\"}".formatted(DemoData.IMAGE_ID);
     mvc.perform(post("/api/v1/routines").header(LoginUser.HEADER, USER)
             .contentType(MediaType.APPLICATION_JSON)
-            .content("{\"title\": \"루틴\", \"cards\": [" + String.join(",", java.util.Collections.nCopies(11, card)) + "]}"))
+            .content("{\"title\": \"저녁 루틴입니다\", \"cards\": [" + String.join(",", java.util.Collections.nCopies(11, card)) + "]}"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.result.cards").isString());
 
     // 헤더 없음
     mvc.perform(post("/api/v1/routines")
             .contentType(MediaType.APPLICATION_JSON)
-            .content(body("루틴", "첫 번째 카드 제목", DemoData.IMAGE_ID)))
+            .content(body("저녁 루틴입니다", "첫 번째 카드 제목", DemoData.IMAGE_ID)))
         .andExpect(status().isBadRequest());
 
     // 잘못된 ID 형식
@@ -235,7 +245,7 @@ class RoutineImageApiTests {
     // 없는 이미지로 카드 생성
     mvc.perform(post("/api/v1/routines").header(LoginUser.HEADER, USER)
             .contentType(MediaType.APPLICATION_JSON)
-            .content(body("루틴", "첫 번째 카드 제목", UNKNOWN_ID)))
+            .content(body("저녁 루틴입니다", "첫 번째 카드 제목", UNKNOWN_ID)))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.code").value("IMAGE404"));
   }
@@ -252,7 +262,7 @@ class RoutineImageApiTests {
 
     mvc.perform(put("/api/v1/routines/" + routineId).header(LoginUser.HEADER, otherUser)
             .contentType(MediaType.APPLICATION_JSON)
-            .content(body("남의 루틴", "첫 번째 카드 제목", DemoData.IMAGE_ID)))
+            .content(body("남의 루틴 수정", "첫 번째 카드 제목", DemoData.IMAGE_ID)))
         .andExpect(status().isForbidden())
         .andExpect(jsonPath("$.code").value("ROUTINE403"));
 
@@ -276,7 +286,7 @@ class RoutineImageApiTests {
 
     mvc.perform(post("/api/v1/routines").header(LoginUser.HEADER, "third-device")
             .contentType(MediaType.APPLICATION_JSON)
-            .content(body("루틴", "첫 번째 카드 제목", imageId)))
+            .content(body("저녁 루틴입니다", "첫 번째 카드 제목", imageId)))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.code").value("IMAGE404"));
   }
