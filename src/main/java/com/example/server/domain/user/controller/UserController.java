@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "User", description = "기기 토큰 기반 사용자 생성 · 조회")
+@Tag(name = "User")
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -34,7 +34,7 @@ public class UserController {
   private final UserCommandService commandService;
   private final UserQueryService queryService;
 
-  @Operation(summary = "기기 토큰으로 사용자 목록 조회")
+  @Operation(summary = "기기 토큰으로 사용자 조회", description = "앱 시작 시 이 기기로 가입한 사용자가 있는지 확인합니다. 없으면 빈 배열이고, 이때 `POST /api/users`로 가입합니다.")
   @GetMapping
   public ApiResponse<List<UserResponseDTO>> findByDeviceToken(
       @Parameter(description = "기기 토큰", example = DemoData.USER_DEVICE_TOKEN)
@@ -55,7 +55,7 @@ public class UserController {
         .body(ApiResponse.of(SuccessStatus._CREATED, result));
   }
 
-  @Operation(summary = "내 프로필 조회")
+  @Operation(summary = "내 프로필 조회", description = "X-Device-Token 헤더의 사용자 프로필을 반환합니다.")
   @GetMapping("/me")
   public ApiResponse<UserResponseDTO> findMe(@LoginUser Long userId) {
     return ApiResponse.onSuccess(queryService.findMe(userId));

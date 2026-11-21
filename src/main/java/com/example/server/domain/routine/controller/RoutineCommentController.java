@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Routine Comment", description = "루틴 댓글 목록 · 작성 · 수정 · 삭제")
+@Tag(name = "Routine Comment")
 @RestController
 @RequestMapping("/api/routines/{routineId}/comments")
 @RequiredArgsConstructor
@@ -47,7 +47,7 @@ public class RoutineCommentController {
     return ApiResponse.onSuccess(queryService.findAll(userId, routineId));
   }
 
-  @Operation(summary = "루틴 댓글 작성")
+  @Operation(summary = "루틴 댓글 작성", description = "본문 1~50자. 생성된 댓글을 반환합니다(isMine=true).")
   @PostMapping
   public ResponseEntity<ApiResponse<RoutineCommentResponseDTO>> create(
       @LoginUser Long userId,
