@@ -40,7 +40,7 @@ public class Routine extends SoftDeletableEntity {
   @Column(nullable = false, length = 30)
   private String title;
 
-  @Column(length = 100)
+  @Column(length = 500)
   private String content;
 
   public Routine(String publicId, User user, String title, String content) {

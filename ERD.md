@@ -92,7 +92,7 @@
 | `public_id` | `CHAR(26)` | NO | — | — | 외부 노출용 식별자(ULID) |
 | `user_id` | `BIGINT` | NO | FK | — | 소유자 users.id |
 | `title` | `VARCHAR(30)` | NO | — | — | 루틴 제목 5~30자(필수) |
-| `content` | `VARCHAR(100)` | YES | — | — | 루틴 소개 최대 100자(선택) |
+| `content` | `VARCHAR(500)` | YES | — | — | 루틴 소개 최대 500자(선택) |
 | `created_at` | `DATETIME` | NO | — | `CURRENT_TIMESTAMP` | 생성일시 |
 | `created_by` | `BIGINT` | NO | — | — | 생성 주체 user id |
 | `updated_at` | `DATETIME` | NO | — | `CURRENT_TIMESTAMP` | 수정일시 |

@@ -189,6 +189,25 @@ class RoutineImageApiTests {
         .andExpect(jsonPath("$.result.title").isString())
         .andExpect(jsonPath("$.result['cards[0].title']").isString());
 
+    // 루틴 소개 501자
+    mvc.perform(post("/api/v1/routines").header(LoginUser.HEADER, USER)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("""
+                {"title": "저녁 루틴입니다", "content": "%s",
+                 "cards": [{"imageId": "%s", "title": "카드 제목입니다", "time": "07:00"}]}
+                """.formatted("가".repeat(501), DemoData.IMAGE_ID)))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.result.content").isString());
+
+    // 루틴 소개 500자는 통과
+    mvc.perform(post("/api/v1/routines").header(LoginUser.HEADER, USER)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("""
+                {"title": "저녁 루틴입니다", "content": "%s",
+                 "cards": [{"imageId": "%s", "title": "카드 제목입니다", "time": "07:00"}]}
+                """.formatted("가".repeat(500), DemoData.IMAGE_ID)))
+        .andExpect(status().isCreated());
+
     // 시간 누락
     mvc.perform(post("/api/v1/routines").header(LoginUser.HEADER, USER)
             .contentType(MediaType.APPLICATION_JSON)

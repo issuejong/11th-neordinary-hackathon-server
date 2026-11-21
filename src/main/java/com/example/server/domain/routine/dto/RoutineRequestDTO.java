@@ -23,11 +23,11 @@ public class RoutineRequestDTO {
       @Size(min = 5, max = 30, message = "루틴 제목은 5자 이상 30자 이하여야 합니다.")
       String title,
 
-      @Schema(description = "루틴 소개 (선택, 최대 100자)", example = "출근 전 1시간으로 하루를 시작해요.")
-      @Size(max = 100, message = "루틴 소개는 100자 이하여야 합니다.")
+      @Schema(description = "루틴 소개 (선택, 최대 500자)", example = "출근 전 1시간으로 하루를 시작해요.")
+      @Size(max = 500, message = "루틴 소개는 500자 이하여야 합니다.")
       String content,
 
-      @Schema(description = "카드 목록 (1~10장, 배열 순서대로 저장)", requiredMode = Schema.RequiredMode.REQUIRED)
+      @Schema(description = "스텝(카드) 목록 (필수, 1~10개, 배열 순서대로 저장)", requiredMode = Schema.RequiredMode.REQUIRED)
       @NotEmpty(message = "카드는 1장 이상이어야 합니다.")
       @Size(max = 10, message = "카드는 최대 10장까지 등록할 수 있습니다.")
       List<@Valid @NotNull(message = "카드 값이 비어 있습니다.") Card> cards
