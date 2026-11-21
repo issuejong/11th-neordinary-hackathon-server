@@ -29,11 +29,11 @@
 | `device_token` | `VARCHAR(255)` | NO | — | — | 프론트가 전달하는 기기 개별 토큰(로그인 조회용, 참조 키로 사용 금지) |
 | `nickname` | `VARCHAR(30)` | NO | — | — | 닉네임(수정 가능한 값, 식별/참조 불가) |
 | `profile_image_id` | `BIGINT` | NO | FK | — | 대표 이미지 images.id(가입 시 기본 이미지 중 랜덤 부여) |
-| `created_at` | `DATETIME` | NO | — | `CURRENT_TIMESTAMP` | 생성일시 |
+| `created_at` | `DATETIME(6)` | NO | — | `CURRENT_TIMESTAMP(6)` | 생성일시 |
 | `created_by` | `BIGINT` | YES | — | — | 생성 주체 user id(가입/시스템은 NULL) |
-| `updated_at` | `DATETIME` | NO | — | `CURRENT_TIMESTAMP` | 수정일시 |
+| `updated_at` | `DATETIME(6)` | NO | — | `CURRENT_TIMESTAMP(6)` | 수정일시 |
 | `updated_by` | `BIGINT` | YES | — | — | 수정 주체 user id |
-| `deleted_at` | `DATETIME` | YES | — | — | 삭제일시(soft delete) |
+| `deleted_at` | `DATETIME(6)` | YES | — | — | 삭제일시(soft delete) |
 | `deleted_by` | `BIGINT` | YES | — | — | 삭제 주체 user id |
 
 ### 키 및 인덱스
@@ -64,11 +64,11 @@
 | `content_type` | `VARCHAR(50)` | NO | — | — | MIME 타입(예: image/png) |
 | `byte_size` | `INT UNSIGNED` | NO | — | — | 파일 크기(byte) |
 | `data` | `MEDIUMBLOB` | NO | — | — | 이미지 바이너리입니다. 해커톤 MVP에서는 DB에 저장합니다. |
-| `created_at` | `DATETIME` | NO | — | `CURRENT_TIMESTAMP` | 생성일시 |
+| `created_at` | `DATETIME(6)` | NO | — | `CURRENT_TIMESTAMP(6)` | 생성일시 |
 | `created_by` | `BIGINT` | YES | — | — | 생성 주체 user id(기본 프로필 이미지 등 시스템 등록은 NULL) |
-| `updated_at` | `DATETIME` | NO | — | `CURRENT_TIMESTAMP` | 수정일시 |
+| `updated_at` | `DATETIME(6)` | NO | — | `CURRENT_TIMESTAMP(6)` | 수정일시 |
 | `updated_by` | `BIGINT` | YES | — | — | 수정 주체 user id |
-| `deleted_at` | `DATETIME` | YES | — | — | 삭제일시(soft delete) |
+| `deleted_at` | `DATETIME(6)` | YES | — | — | 삭제일시(soft delete) |
 | `deleted_by` | `BIGINT` | YES | — | — | 삭제 주체 user id |
 
 ### 키 및 인덱스
@@ -93,11 +93,11 @@
 | `user_id` | `BIGINT` | NO | FK | — | 소유자 users.id |
 | `title` | `VARCHAR(30)` | NO | — | — | 루틴 제목 5~30자(필수) |
 | `content` | `VARCHAR(500)` | YES | — | — | 루틴 소개 최대 500자(선택) |
-| `created_at` | `DATETIME` | NO | — | `CURRENT_TIMESTAMP` | 생성일시 |
+| `created_at` | `DATETIME(6)` | NO | — | `CURRENT_TIMESTAMP(6)` | 생성일시 |
 | `created_by` | `BIGINT` | NO | — | — | 생성 주체 user id |
-| `updated_at` | `DATETIME` | NO | — | `CURRENT_TIMESTAMP` | 수정일시 |
+| `updated_at` | `DATETIME(6)` | NO | — | `CURRENT_TIMESTAMP(6)` | 수정일시 |
 | `updated_by` | `BIGINT` | NO | — | — | 수정 주체 user id |
-| `deleted_at` | `DATETIME` | YES | — | — | 삭제일시(soft delete) |
+| `deleted_at` | `DATETIME(6)` | YES | — | — | 삭제일시(soft delete) |
 | `deleted_by` | `BIGINT` | YES | — | — | 삭제 주체 user id |
 
 ### 키 및 인덱스
@@ -130,9 +130,9 @@
 | `title` | `VARCHAR(30)` | NO | — | — | 제목 5~30자(필수) |
 | `content` | `VARCHAR(100)` | YES | — | — | 내용 최대 100자(선택) |
 | `card_time` | `TIME` | YES | — | — | 시간 HH:MM(API에서 필수 검증) |
-| `created_at` | `DATETIME` | NO | — | `CURRENT_TIMESTAMP` | 생성일시 |
+| `created_at` | `DATETIME(6)` | NO | — | `CURRENT_TIMESTAMP(6)` | 생성일시 |
 | `created_by` | `BIGINT` | NO | — | — | 생성 주체 user id |
-| `updated_at` | `DATETIME` | NO | — | `CURRENT_TIMESTAMP` | 수정일시 |
+| `updated_at` | `DATETIME(6)` | NO | — | `CURRENT_TIMESTAMP(6)` | 수정일시 |
 | `updated_by` | `BIGINT` | NO | — | — | 수정 주체 user id |
 
 ### 키 및 인덱스
@@ -142,6 +142,7 @@
 | `uk_cards_public_id` | `public_id` | UNIQUE |
 | `uk_cards_routine_order` | `routine_id`, `sort_order` | UNIQUE |
 | `idx_cards_image` | `image_id` | INDEX |
+| `chk_cards_sort_order` | `sort_order BETWEEN 1 AND 10` | CHECK |
 | `pk_routine_cards` | `id` | PRIMARY KEY |
 
 ### 외래 키
@@ -164,11 +165,11 @@
 | `routine_id` | `BIGINT` | NO | FK | — | 루틴 routines.id |
 | `user_id` | `BIGINT` | NO | FK | — | 작성자 users.id |
 | `content` | `VARCHAR(50)` | NO | — | — | 댓글 내용 1~50자 |
-| `created_at` | `DATETIME` | NO | — | `CURRENT_TIMESTAMP` | 작성일시 |
+| `created_at` | `DATETIME(6)` | NO | — | `CURRENT_TIMESTAMP(6)` | 작성일시 |
 | `created_by` | `BIGINT` | NO | — | — | 생성 주체 user id |
-| `updated_at` | `DATETIME` | NO | — | `CURRENT_TIMESTAMP` | 수정일시 |
+| `updated_at` | `DATETIME(6)` | NO | — | `CURRENT_TIMESTAMP(6)` | 수정일시 |
 | `updated_by` | `BIGINT` | NO | — | — | 수정 주체 user id |
-| `deleted_at` | `DATETIME` | YES | — | — | 삭제일시(soft delete) |
+| `deleted_at` | `DATETIME(6)` | YES | — | — | 삭제일시(soft delete) |
 | `deleted_by` | `BIGINT` | YES | — | — | 삭제 주체 user id |
 
 ### 키 및 인덱스
@@ -198,11 +199,11 @@
 | `id` | `BIGINT` | NO | PK, AI | — | 내부 식별자(PK) |
 | `routine_id` | `BIGINT` | NO | FK | — | 루틴 routines.id |
 | `user_id` | `BIGINT` | NO | FK | — | 좋아요 한 사용자 users.id |
-| `created_at` | `DATETIME` | NO | — | `CURRENT_TIMESTAMP` | 생성일시 |
+| `created_at` | `DATETIME(6)` | NO | — | `CURRENT_TIMESTAMP(6)` | 생성일시 |
 | `created_by` | `BIGINT` | NO | — | — | 생성 주체 user id |
-| `updated_at` | `DATETIME` | NO | — | `CURRENT_TIMESTAMP` | 수정일시 |
+| `updated_at` | `DATETIME(6)` | NO | — | `CURRENT_TIMESTAMP(6)` | 수정일시 |
 | `updated_by` | `BIGINT` | NO | — | — | 수정 주체 user id |
-| `deleted_at` | `DATETIME` | YES | — | — | 좋아요 취소일시(NULL=좋아요 상태, 재좋아요 시 행 복구) |
+| `deleted_at` | `DATETIME(6)` | YES | — | — | 좋아요 취소일시(NULL=좋아요 상태, 재좋아요 시 행 복구) |
 | `deleted_by` | `BIGINT` | YES | — | — | 삭제 주체 user id |
 
 ### 키 및 인덱스
@@ -233,13 +234,13 @@
 | `routine_id` | `BIGINT` | NO | FK | — | 루틴 routines.id |
 | `user_id` | `BIGINT` | NO | FK | — | 참여자 users.id(루틴 소유자 제외는 API 진입점에서 검증) |
 | `status` | `ENUM('IN_PROGRESS','COMPLETED')` | NO | — | `'IN_PROGRESS'` | 참여중/참여완료 |
-| `joined_at` | `DATETIME` | NO | — | `CURRENT_TIMESTAMP` | 참여일시(재참여 시 갱신) |
-| `completed_at` | `DATETIME` | YES | — | — | 참여 완료일시 |
-| `created_at` | `DATETIME` | NO | — | `CURRENT_TIMESTAMP` | 생성일시 |
+| `joined_at` | `DATETIME(6)` | NO | — | `CURRENT_TIMESTAMP(6)` | 참여일시(재참여 시 갱신) |
+| `completed_at` | `DATETIME(6)` | YES | — | — | 참여 완료일시 |
+| `created_at` | `DATETIME(6)` | NO | — | `CURRENT_TIMESTAMP(6)` | 생성일시 |
 | `created_by` | `BIGINT` | NO | — | — | 생성 주체 user id |
-| `updated_at` | `DATETIME` | NO | — | `CURRENT_TIMESTAMP` | 수정일시 |
+| `updated_at` | `DATETIME(6)` | NO | — | `CURRENT_TIMESTAMP(6)` | 수정일시 |
 | `updated_by` | `BIGINT` | NO | — | — | 수정 주체 user id |
-| `deleted_at` | `DATETIME` | YES | — | — | 참여 취소일시(NULL=참여 상태, 재참여 시 행 복구 후 초기화) |
+| `deleted_at` | `DATETIME(6)` | YES | — | — | 참여 취소일시(NULL=참여 상태, 재참여 시 행 복구 후 초기화) |
 | `deleted_by` | `BIGINT` | YES | — | — | 삭제 주체 user id |
 
 ### 키 및 인덱스
@@ -261,5 +262,6 @@
 ## 구현 전 확인 사항
 
 - **Apple 로그인**에서 프론트가 넘기는 값이 `identityToken`이면 서버에서 토큰을 검증하고, `sub`를 고유한 `users.apple_sub`에 저장하는 흐름을 적용합니다. 위 표의 `device_token`은 붙여넣은 스키마 기준입니다.
-- **카드 10장 제한**을 DB에서 보장하려면 `UNIQUE (routine_id, sort_order)`와 함께 `CHECK (sort_order BETWEEN 1 AND 10)`이 필요합니다. 붙여넣은 스키마에는 고유 인덱스와 순번 범위 설명이 있습니다.
-- **이미지 업로드**에서는 API에서 파일 형식과 허용 크기를 검증합니다. `MEDIUMBLOB`의 저장 한도는 16 MiB보다 1바이트 작습니다.
+- **카드 10장 제한**은 API 검증(1~10개)과 DB의 `UNIQUE (routine_id, sort_order)` + `CHECK (sort_order BETWEEN 1 AND 10)`(`chk_cards_sort_order`)로 이중으로 보장합니다.
+- **이미지 업로드**는 API에서 형식(jpeg, png, heic, heif, webp, gif)과 크기(파일 10MB, 요청 20MB)를 검증합니다. `MEDIUMBLOB`의 저장 한도는 16 MiB보다 1바이트 작습니다.
+- **시각 컬럼**은 모두 마이크로초 정밀도(`DATETIME(6)`)입니다.
