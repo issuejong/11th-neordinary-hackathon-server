@@ -295,6 +295,80 @@ class RoutineListApiTests extends ApiTestSupport {
     assertThat(ids(list("?cursor="))).isEqualTo(ids(list("")));
   }
 
+  // ---------- authorId (마이페이지 내 루틴) ----------
+
+  private String publicIdOf(String token) {
+    return tx.execute(status -> user(token).getPublicId());
+  }
+
+  @ParameterizedTest(name = "sort={0}&authorId=: 그 사용자의 루틴만, 정렬 · 응답 모양은 메인과 동일")
+  @ValueSource(strings = {"latest", "likes", "participants"})
+  void filterByAuthor(String sort) throws Exception {
+    String me = newUser();
+    String mine1 = createRoutine(me);
+    String mine2 = createRoutine(me);
+    String others = createRoutine(DEMO_TOKEN);
+    like(mine1, 1, 0);
+    participate(mine1, 1, 0, 0);
+
+    List<Map<String, Object>> routines = list("?size=50&sort=" + sort + "&authorId=" + publicIdOf(me));
+    assertThat(ids(routines)).containsExactlyInAnyOrder(mine1, mine2).doesNotContain(others);
+    assertThat(routines).allSatisfy(r -> assertThat(((Map<?, ?>) r.get("owner")).get("userId")).isEqualTo(publicIdOf(me)));
+    if (!sort.equals("latest")) {
+      assertThat(ids(routines)).containsExactly(mine1, mine2); // 카운트 1 > 0
+    } else {
+      assertThat(ids(routines)).containsExactly(mine2, mine1); // 최신순
+    }
+    // 메인 목록 항목과 같은 필드
+    assertThat(routines.getFirst().keySet()).isEqualTo(list("?size=1").getFirst().keySet());
+  }
+
+  @Test
+  @DisplayName("authorId + 커서: 끝까지 따라가도 그 사용자 루틴만, 중복 없음")
+  void filterByAuthorWithCursor() throws Exception {
+    String me = newUser();
+    List<String> mine = new java.util.ArrayList<>();
+    for (int i = 0; i < 5; i++) {
+      mine.add(createRoutine(me));
+      createRoutine(DEMO_TOKEN); // 사이사이 다른 사람 루틴
+    }
+    String author = publicIdOf(me);
+    List<String> walked = new java.util.ArrayList<>();
+    String cursor = null;
+    do {
+      String json = page("?size=2&authorId=" + author + (cursor == null ? "" : "&cursor=" + cursor));
+      walked.addAll(ids(JsonPath.read(json, "$.result.routines")));
+      cursor = JsonPath.read(json, "$.result.nextCursor");
+    } while (cursor != null);
+    assertThat(walked).containsExactlyElementsOf(mine.reversed());
+  }
+
+  @Test
+  @DisplayName("삭제한 내 루틴은 빠지고, 루틴이 없는 사용자 · 없는 사용자는 빈 목록")
+  void filterByAuthorEdgeCases() throws Exception {
+    String me = newUser();
+    String deleted = createRoutine(me);
+    mvc.perform(delete("/api/routines/" + deleted).header(LoginUser.HEADER, me)).andExpect(status().isOk());
+
+    mvc.perform(get("/api/routines").param("authorId", publicIdOf(me)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.result.routines.length()").value(0))
+        .andExpect(jsonPath("$.result.hasNext").value(false))
+        .andExpect(jsonPath("$.result.nextCursor").doesNotExist());
+    mvc.perform(get("/api/routines").param("authorId", UNKNOWN_ID))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.result.routines.length()").value(0));
+  }
+
+  @ParameterizedTest(name = "authorId={0} → 400")
+  @ValueSource(strings = {"abc", "demo-device-token", "01kb0000000000000000mem001", " "})
+  void invalidAuthorId(String authorId) throws Exception {
+    mvc.perform(get("/api/routines").param("authorId", authorId))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("COMMON400"))
+        .andExpect(jsonPath("$.result.authorId").isString());
+  }
+
   // ---------- 검증 ----------
 
   @ParameterizedTest(name = "sort={0} → 400")

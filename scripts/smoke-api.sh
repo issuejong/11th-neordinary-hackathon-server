@@ -66,6 +66,10 @@ req GET /api/routines;                             check "목록 (기본 latest)
 for s in latest likes participants; do req GET "/api/routines?sort=$s&size=5"; check "목록 sort=$s" 200 "$STATUS" COMMON200 "$BODY"; done
 req GET "/api/routines?sort=popular";              check "잘못된 sort" 400 "$STATUS" COMMON400 "$BODY"
 req GET "/api/routines?size=51";                   check "size 초과" 400 "$STATUS" COMMON400 "$BODY"
+req GET "/api/routines?authorId=01KB0000000000000000MEM001&size=50"; check "내 루틴 (authorId)" 200 "$STATUS" COMMON200 "$BODY"
+OWNERS=$(json result.routines | python3 -c 'import sys,ast;print(sorted({r["owner"]["userId"] for r in ast.literal_eval(sys.stdin.read())}))')
+[[ "$OWNERS" == "['01KB0000000000000000MEM001']" ]] && check "authorId 필터 (작성자 1명만)" 1 1 || check "authorId 필터 (작성자 1명만)" 1 0
+req GET "/api/routines?authorId=abc";              check "잘못된 authorId" 400 "$STATUS" COMMON400 "$BODY"
 req GET "/api/routines?cursor=abc";                check "잘못된 커서" 400 "$STATUS" ROUTINE4001 "$BODY"
 for s in latest likes participants; do # 커서를 끝까지 따라가서 중복 없는지
   CUR=""; SEEN=""; DUP=0; N=0

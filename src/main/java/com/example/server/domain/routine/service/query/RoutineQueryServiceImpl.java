@@ -42,13 +42,13 @@ public class RoutineQueryServiceImpl implements RoutineQueryService {
 
   @Override
   @Transactional(readOnly = true)
-  public RoutineResponseDTO.Page getList(RoutineSort sort, String cursor, int size) {
+  public RoutineResponseDTO.Page getList(RoutineSort sort, String authorId, String cursor, int size) {
     RoutineCursor from = RoutineCursor.decode(cursor, sort);
     Pageable limit = PageRequest.of(0, size + 1); // 한 개 더 조회해서 다음 페이지 여부 판단
     List<RoutineSummaryView> rows = switch (sort) {
-      case LATEST -> routineRepository.findLatest(from.publicId(), limit);
-      case LIKES -> routineRepository.findMostLiked(from.count(), from.publicId(), limit);
-      case PARTICIPANTS -> routineRepository.findMostParticipated(from.count(), from.publicId(), limit);
+      case LATEST -> routineRepository.findLatest(authorId, from.publicId(), limit);
+      case LIKES -> routineRepository.findMostLiked(authorId, from.count(), from.publicId(), limit);
+      case PARTICIPANTS -> routineRepository.findMostParticipated(authorId, from.count(), from.publicId(), limit);
     };
 
     boolean hasNext = rows.size() > size;

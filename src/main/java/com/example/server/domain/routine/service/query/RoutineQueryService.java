@@ -7,5 +7,5 @@ public interface RoutineQueryService {
 
   RoutineResponseDTO.Detail getDetail(String routineId);
 
-  RoutineResponseDTO.Page getList(RoutineSort sort, String cursor, int size);
+  RoutineResponseDTO.Page getList(RoutineSort sort, String authorId, String cursor, int size);
 }
