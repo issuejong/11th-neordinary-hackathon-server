@@ -1,0 +1,64 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: neordinary-hk-55oqn
+  REGION: asia-northeast3
+  SERVICE: hackathon-server
+  REPOSITORY: hackathon
+  IMAGE: asia-northeast3-docker.pkg.dev/neordinary-hk-55oqn/hackathon/hackathon-server
+
+concurrency:
+  group: deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Workload Identity Federation (키 파일 없이 인증)
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Test
+        run: chmod +x gradlew && ./gradlew test --no-daemon
+
+      - id: auth
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: projects/980963649381/locations/global/workloadIdentityPools/github/providers/github-repo
+          service_account: hackathon-deployer@neordinary-hk-55oqn.iam.gserviceaccount.com
+
+      - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+
+      - name: Build & push image
+        run: |
+          gcloud auth configure-docker asia-northeast3-docker.pkg.dev --quiet
+          docker build -t $IMAGE:${{ github.sha }} .
+          docker push $IMAGE:${{ github.sha }}
+
+      - name: Deploy
+        run: |
+          gcloud run deploy $SERVICE \
+            --image=$IMAGE:${{ github.sha }} \
+            --region=$REGION \
+            --service-account=hackathon-runtime@neordinary-hk-55oqn.iam.gserviceaccount.com \
+            --network=default --subnet=default --vpc-egress=private-ranges-only \
+            --set-secrets=DB_URL=db-url:latest,DB_USERNAME=db-username:latest,DB_PASSWORD=db-password:latest \
+            --set-env-vars=SPRING_PROFILES_ACTIVE=prod \
+            --cpu=1 --memory=1Gi \
+            --min-instances=1 --max-instances=2 \
+            --port=8080 \
+            --allow-unauthenticated \
+            --quiet
