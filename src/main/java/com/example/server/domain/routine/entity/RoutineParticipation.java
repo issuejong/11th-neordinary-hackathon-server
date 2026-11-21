@@ -61,7 +61,15 @@ public class RoutineParticipation extends SoftDeletableEntity {
   @Column(name = "work_json", columnDefinition = "TEXT")
   private String workJson;
 
+  public boolean hasPublishedWork() {
+    return status == Status.COMPLETED && workJson != null;
+  }
+
   public void saveWork(String workJson) {
+    if (status == Status.COMPLETED && this.workJson == null) {
+      status = Status.IN_PROGRESS;
+      completedAt = null;
+    }
     this.workJson = workJson;
     recordUpdate(user.getId());
   }

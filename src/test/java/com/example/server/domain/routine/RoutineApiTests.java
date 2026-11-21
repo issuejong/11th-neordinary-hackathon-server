@@ -36,6 +36,35 @@ class RoutineApiTests extends ApiTestSupport {
   }
 
   // =====================================================================
+  @Test
+  void allowsRetainingLegacyCardImageWhenEditingButRejectsAddingIt() throws Exception {
+    String owner = newUser();
+    String routineId = createRoutine(owner);
+    byte[] gif = com.example.server.support.TestImages.encode("gif", 4, 3);
+    String legacy = JsonPath.read(uploadImage(owner, "image/gif", gif)
+        .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString(), "$.result.imageId");
+    tx.executeWithoutResult(status -> {
+      var image = entityManager.createQuery("from Image i where i.publicId = :id",
+          com.example.server.domain.image.entity.Image.class).setParameter("id", legacy).getSingleResult();
+      entityManager.createQuery("""
+          update RoutineCard c set c.image = :image
+          where c.routine.id = (select r.id from Routine r where r.publicId = :routineId) and c.sortOrder = 1
+          """).setParameter("image", image).setParameter("routineId", routineId).executeUpdate();
+    });
+    String legacyCard = card(legacy, "기존 GIF 스텝", "07:00");
+
+    mvc.perform(put("/api/routines/" + routineId).header(LoginUser.HEADER, authorization(owner))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(routineJson("제목만 바꾼 루틴", null, legacyCard, validCard())))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.result.cards[0].imageId").value(legacy));
+
+    mvc.perform(put("/api/routines/" + routineId).header(LoginUser.HEADER, authorization(owner))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(routineJson("레거시 이미지 복제", null, legacyCard, legacyCard)))
+        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("IMAGE4007"));
+  }
+
   @Nested
   @DisplayName("POST /api/routines 루틴 생성")
   class Create {

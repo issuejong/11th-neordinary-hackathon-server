@@ -3,7 +3,6 @@ package com.example.server.domain.routine.service.command;
 import com.example.server.domain.routine.dto.RoutineResponseDTO.Interactions;
 import com.example.server.domain.routine.entity.Routine;
 import com.example.server.domain.routine.entity.RoutineParticipation;
-import com.example.server.domain.routine.entity.RoutineParticipation.Status;
 import com.example.server.domain.routine.repository.RoutineParticipationRepository;
 import com.example.server.domain.routine.repository.RoutineRepository;
 import com.example.server.domain.routine.service.query.RoutineQueryService;
@@ -44,7 +43,7 @@ public class RoutineParticipationCommandServiceImpl implements RoutineParticipat
     participationRepository.findByRoutine_IdAndUser_Id(routine.getId(), userId)
         .filter(participation -> participation.getDeletedAt() == null)
         .ifPresent(participation -> {
-          if (participation.getStatus() == Status.COMPLETED) {
+          if (participation.hasPublishedWork()) {
             throw new BusinessException(ErrorStatus.PARTICIPATION_INVALID_STATE);
           }
           participation.discard(LocalDateTime.now());
@@ -58,11 +57,8 @@ public class RoutineParticipationCommandServiceImpl implements RoutineParticipat
     RoutineParticipation participation = participationRepository.findByRoutine_IdAndUser_Id(routine.getId(), userId)
         .filter(existing -> existing.getDeletedAt() == null)
         .orElseThrow(() -> new BusinessException(ErrorStatus.PARTICIPATION_INVALID_STATE));
-    if (participation.getStatus() == Status.IN_PROGRESS) {
-      if (participation.getWorkJson() != null) {
-        throw new BusinessException(ErrorStatus.PARTICIPATION_WORK_REQUIRED);
-      }
-      participation.complete(LocalDateTime.now());
+    if (!participation.hasPublishedWork()) {
+      throw new BusinessException(ErrorStatus.PARTICIPATION_WORK_REQUIRED);
     }
     return routineQueryService.getInteractions(userId, routineId);
   }

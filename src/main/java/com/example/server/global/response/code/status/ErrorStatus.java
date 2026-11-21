@@ -53,6 +53,7 @@ public enum ErrorStatus implements BaseCode {
   PARTICIPATION_RESULT_NOT_FOUND(HttpStatus.NOT_FOUND, "PARTICIPATION404", "참여 결과를 찾을 수 없습니다."),
   PARTICIPATION_RESULT_FORBIDDEN(HttpStatus.FORBIDDEN, "PARTICIPATION4032", "작성자만 참여 결과를 변경할 수 있습니다."),
   PARTICIPATION_WORK_REQUIRED(HttpStatus.BAD_REQUEST, "PARTICIPATION400", "완료하려면 모든 스텝과 루틴 제목을 제출해 주세요."),
+  PARTICIPATION_CARD_COUNT(HttpStatus.BAD_REQUEST, "PARTICIPATION4002", "참여 결과의 스텝 수가 작성해야 할 스텝 수와 다릅니다."),
   PARTICIPATION_INVALID_STATE(HttpStatus.CONFLICT, "PARTICIPATION409", "현재 참여 상태에서는 이 동작을 할 수 없습니다.");
 
   private final HttpStatus httpStatus;

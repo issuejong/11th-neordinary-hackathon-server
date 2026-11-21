@@ -46,7 +46,8 @@ public class RoutineController {
           - 메인: sort만 / 프로필 내 루틴 탭: authorId / 프로필 참여 루틴 탭: participantId (사용자 publicId). 응답 모양은 같습니다.
           - totalCount: 필터에 해당하는 전체 개수 (탭의 "내 루틴(N)" 표시용)
           - 커서 기반 무한 스크롤: 첫 요청은 cursor 없이, 다음 요청은 응답의 nextCursor를 cursor로 보냅니다.
-          - 정렬 값이 같으면(동점) 최신순입니다. cursor는 같은 sort로만 쓸 수 있습니다.
+          - 정렬 값이 같으면 최신순입니다. 좋아요순·참여순은 첫 요청의 순서와 전체 개수를 15분간 유지합니다.
+          - 인기순 커서는 같은 정렬·필터로 사용합니다. 만료되면 커서 없이 다시 요청합니다.
           """)
   @GetMapping
   public ApiResponse<RoutineResponseDTO.Page> list(

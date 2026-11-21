@@ -8,9 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 /**
- * 루틴 목록 커서. 마지막으로 받은 항목의 (정렬 값, publicId)를 Base64URL 문자열로 감싼다.
- * - 내부 PK(id)는 노출하지 않고, 시간순 정렬되는 publicId(ULID)를 동점 처리 · 최신순 기준으로 쓴다.
- * - 정렬 종류도 함께 넣어서 다른 정렬의 커서를 쓰면 거절한다.
+ * 최신순은 마지막 루틴 ID를 사용한다. 좋아요순과 참여순은 순위 스냅샷 ID와 다음 위치를 사용한다.
  */
 public record RoutineCursor(RoutineSort sort, long count, String publicId) {
 
