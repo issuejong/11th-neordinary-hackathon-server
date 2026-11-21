@@ -49,7 +49,7 @@ com.example.server
 | PUT | `/api/routines/{routineId}` | 루틴 수정 (카드 전체 교체), 작성자만 | O |
 | DELETE | `/api/routines/{routineId}` | 루틴 소프트 삭제, 작성자만 | O |
 
-- **테스트 계정 식별**: `POST /api/test-accounts`에 슬롯 번호와 닉네임을 보내 계정을 공개 등록합니다. 슬롯은 1~5번입니다. 첫 화면에서 `GET /api/test-accounts`를 조회한 뒤 `POST /api/test-accounts/{publicId}/claim`으로 계정을 선택합니다. 이후 `Authorization: Bearer <accessToken>`을 사용합니다. 컨트롤러는 `@LoginUser Long userId`로 내부 사용자 ID를 받고, Swagger는 Authorize로 세션을 설정합니다.
+- **테스트 계정 식별**: `POST /api/test-accounts`에 슬롯 번호와 닉네임을 보내 계정을 공개 등록합니다. 슬롯은 1~7번입니다. 첫 화면에서 `GET /api/test-accounts`를 조회한 뒤 `POST /api/test-accounts/{publicId}/claim`으로 계정을 선택합니다. 이후 `Authorization: Bearer <accessToken>`을 사용합니다. 컨트롤러는 `@LoginUser Long userId`로 내부 사용자 ID를 받고, Swagger는 Authorize로 세션을 설정합니다.
 - **데모 데이터**: `global/init/DemoDataInitializer`가 시작할 때 기본 이미지 3개, 데모 유저, 루틴 3개(상세 · 수정 · 삭제 예시용), 댓글 2개(수정 · 삭제 예시용)를 고정 publicId(`DemoData`)로 넣습니다(이미 있으면 건너뜀). Swagger 예시값이 이 ID를 가리키므로 지우거나 바꾸지 마세요.
   - 심사자가 삭제 예시를 실행해도 **1분마다 자동 복구**됩니다(`restoreDeletedDemoData`, `app.demo.restore-interval`).
   - 수정 예시와 삭제 예시는 서로 다른 데이터를 가리키게 하세요(삭제 후 수정 예시가 404가 되지 않도록).
