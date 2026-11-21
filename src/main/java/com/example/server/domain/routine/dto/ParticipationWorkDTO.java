@@ -32,7 +32,7 @@ public class ParticipationWorkDTO {
 
   @Schema(name = "ParticipationDraftCard")
   public record DraftCard(
-      @Schema(example = "01KB0000000000000000DEF001") @Pattern(regexp = Ulid.REGEX) String imageId,
+      @Schema(example = "01KB0000000000000000PHT001") @Pattern(regexp = Ulid.REGEX) String imageId,
       @Schema(example = "기상 후 물 한 잔") @Size(max = 30) String title,
       @Schema(example = "미지근한 물") @Size(max = 100) String content,
       @Schema(example = "07:00") @Pattern(regexp = "(?:[01][0-9]|2[0-3]):[0-5][0-9]") String time

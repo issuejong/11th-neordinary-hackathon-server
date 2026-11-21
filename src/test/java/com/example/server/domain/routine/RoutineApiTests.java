@@ -359,12 +359,15 @@ class RoutineApiTests extends ApiTestSupport {
           .andExpect(jsonPath("$.result.owner.userId").value(DemoData.USER_ID))
           .andExpect(jsonPath("$.result.owner.nickname").value("데모 유저"))
           .andExpect(jsonPath("$.result.owner.profileImageUrl").value(startsWith("http")))
-          .andExpect(jsonPath("$.result.cards.length()").value(3))
+          .andExpect(jsonPath("$.result.title").value("☀️ 미라클 모닝 루틴"))
+          .andExpect(jsonPath("$.result.cards.length()").value(4))
           .andExpect(jsonPath("$.result.cards[0].order").value(1))
           .andExpect(jsonPath("$.result.cards[1].order").value(2))
-          .andExpect(jsonPath("$.result.cards[2].order").value(3))
-          .andExpect(jsonPath("$.result.cards[0].time").value("07:00"))
+          .andExpect(jsonPath("$.result.cards[3].order").value(4))
+          .andExpect(jsonPath("$.result.cards[0].time").value("06:00"))
+          .andExpect(jsonPath("$.result.cards[0].imageId").value(DemoData.PHOTO_SUNRISE))
           .andExpect(jsonPath("$.result.cards[0].imageUrl").value(startsWith("http")))
+          .andExpect(jsonPath("$.result.likeCount").value(4))
           .andExpect(jsonPath("$.result.createdAt").isString())
           .andExpect(jsonPath("$.result.updatedAt").isString());
     }
