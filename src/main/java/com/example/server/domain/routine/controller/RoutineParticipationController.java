@@ -36,7 +36,7 @@ public class RoutineParticipationController {
   @PutMapping
   public ApiResponse<Interactions> join(
       @LoginUser Long userId,
-      @Parameter(description = "루틴 publicId", example = DemoData.EDITABLE_ROUTINE_ID)
+      @Parameter(description = "루틴 publicId", example = DemoData.JOIN_ROUTINE_ID)
       @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String routineId
   ) {
     return ApiResponse.onSuccess(commandService.join(userId, routineId));
@@ -46,7 +46,7 @@ public class RoutineParticipationController {
   @DeleteMapping
   public ApiResponse<Interactions> cancel(
       @LoginUser Long userId,
-      @Parameter(description = "루틴 publicId", example = DemoData.EDITABLE_ROUTINE_ID)
+      @Parameter(description = "루틴 publicId", example = DemoData.JOIN_ROUTINE_ID)
       @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String routineId
   ) {
     return ApiResponse.onSuccess(commandService.cancel(userId, routineId));
@@ -55,7 +55,7 @@ public class RoutineParticipationController {
   @Operation(summary = "내 루틴 참여 초안 조회")
   @GetMapping("/draft")
   public ApiResponse<Draft> draft(@LoginUser Long userId,
-      @Parameter(example = DemoData.ROUTINE_ID)
+      @Parameter(description = "루틴 publicId", example = DemoData.DRAFT_ROUTINE_ID)
       @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String routineId) {
     return ApiResponse.onSuccess(works.findDraft(routineId, userId));
   }
@@ -63,7 +63,7 @@ public class RoutineParticipationController {
   @Operation(summary = "내 루틴 참여 초안 저장", description = "현재 작성 내용을 전체 교체합니다.")
   @PutMapping("/draft")
   public ApiResponse<Draft> saveDraft(@LoginUser Long userId,
-      @Parameter(example = DemoData.ROUTINE_ID)
+      @Parameter(description = "루틴 publicId", example = DemoData.DRAFT_ROUTINE_ID)
       @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String routineId,
       @Valid @RequestBody Draft request) {
     return ApiResponse.onSuccess(works.saveDraft(routineId, userId, request));
@@ -73,7 +73,7 @@ public class RoutineParticipationController {
   @PutMapping("/completion")
   public ApiResponse<Interactions> complete(
       @LoginUser Long userId,
-      @Parameter(description = "루틴 publicId", example = DemoData.ROUTINE_ID)
+      @Parameter(description = "루틴 publicId", example = DemoData.COMPLETE_ROUTINE_ID)
       @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String routineId,
       @Valid @RequestBody(required = false) Save request
   ) {

@@ -117,7 +117,7 @@ public class RoutineController {
   @DeleteMapping("/{routineId}")
   public ApiResponse<Void> delete(
       @LoginUser Long userId,
-      @Parameter(description = "루틴 publicId (데모 사용자의 삭제용 루틴, 1분 안에 자동 복구)", example = DemoData.DELETABLE_ROUTINE_ID)
+      @Parameter(description = "루틴 publicId (데모 사용자의 삭제용 루틴, 10초 안에 자동 복구)", example = DemoData.DELETABLE_ROUTINE_ID)
       @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String routineId
   ) {
     commandService.delete(userId, routineId);

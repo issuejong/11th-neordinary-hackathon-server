@@ -13,6 +13,10 @@ spring:
 
 # 애플리케이션 정책 (환경변수로 덮어쓰기 가능: APP_IMAGE_MAX_DIMENSION 등)
 app:
+  demo:
+    restore-interval: 10s   # Swagger 예시용 데모 데이터(삭제 · 참여 예시) 자동 복구 주기
+  routine:
+    ranking-cursor-ttl: 15m   # 좋아요순 · 참여순 목록 커서(순서 스냅샷) 유효 시간
   test-accounts:
     lease-duration: 2m
   image:

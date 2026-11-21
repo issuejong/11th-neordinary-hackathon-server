@@ -33,7 +33,7 @@ public class ParticipationResultController {
   @Operation(summary = "함께한 루틴 목록", description = "공개된 참여 결과를 완료 최신순으로 반환합니다.")
   @GetMapping
   public ApiResponse<Page> list(
-      @Parameter(example = DemoData.ROUTINE_ID)
+      @Parameter(description = "루틴 publicId", example = DemoData.ROUTINE_ID)
       @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String routineId) {
     return ApiResponse.onSuccess(works.list(routineId));
   }
@@ -41,9 +41,9 @@ public class ParticipationResultController {
   @Operation(summary = "함께한 루틴 상세")
   @GetMapping("/{participantId}")
   public ApiResponse<Detail> detail(
-      @Parameter(example = DemoData.ROUTINE_ID)
+      @Parameter(description = "루틴 publicId", example = DemoData.ROUTINE_ID)
       @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String routineId,
-      @Parameter(description = "함께한 루틴 목록 응답의 participant.userId")
+      @Parameter(description = "함께한 루틴 목록 응답의 participant.userId", example = DemoData.PARTICIPANT_ID)
       @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String participantId) {
     return ApiResponse.onSuccess(works.findResult(routineId, participantId));
   }
@@ -51,9 +51,9 @@ public class ParticipationResultController {
   @Operation(summary = "내 참여 결과 수정")
   @PutMapping("/{participantId}")
   public ApiResponse<Detail> update(@LoginUser Long userId,
-      @Parameter(example = DemoData.ROUTINE_ID)
+      @Parameter(description = "루틴 publicId", example = DemoData.RESULT_EDIT_ROUTINE_ID)
       @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String routineId,
-      @Parameter(description = "함께한 루틴 목록 응답의 participant.userId")
+      @Parameter(description = "내 publicId (본인 결과만 수정 가능)", example = DemoData.USER_ID)
       @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String participantId,
       @Valid @RequestBody Save request) {
     return ApiResponse.onSuccess(works.updateResult(routineId, participantId, userId, request));
@@ -62,9 +62,9 @@ public class ParticipationResultController {
   @Operation(summary = "내 참여 결과 삭제")
   @DeleteMapping("/{participantId}")
   public ApiResponse<Void> delete(@LoginUser Long userId,
-      @Parameter(example = DemoData.ROUTINE_ID)
+      @Parameter(description = "루틴 publicId", example = DemoData.RESULT_DELETE_ROUTINE_ID)
       @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String routineId,
-      @Parameter(description = "함께한 루틴 목록 응답의 participant.userId")
+      @Parameter(description = "내 publicId (본인 결과만 삭제 가능)", example = DemoData.USER_ID)
       @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String participantId) {
     works.deleteResult(routineId, participantId, userId);
     return ApiResponse.onSuccess(null);
