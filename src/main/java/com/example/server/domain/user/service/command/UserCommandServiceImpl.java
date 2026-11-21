@@ -41,7 +41,8 @@ public class UserCommandServiceImpl implements UserCommandService {
     }
     ImageKey selected = images.get(ThreadLocalRandom.current().nextInt(images.size()));
     Image profileImage = imageRepository.getReferenceById(selected.id());
-    User user = userRepository.save(new User(Ulid.generate(), deviceToken, request.nickname().strip(), profileImage));
+    String bio = request.bio() == null || request.bio().isBlank() ? null : request.bio().strip();
+    User user = userRepository.save(new User(Ulid.generate(), deviceToken, request.nickname().strip(), profileImage, bio));
     return UserConverter.toResponse(user, selected.publicId());
   }
 }

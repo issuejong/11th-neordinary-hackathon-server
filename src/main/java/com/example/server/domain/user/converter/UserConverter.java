@@ -9,6 +9,6 @@ public final class UserConverter {
   }
 
   public static UserResponseDTO toResponse(User user, String profileImagePublicId) {
-    return new UserResponseDTO(user.getPublicId(), user.getNickname(), profileImagePublicId);
+    return new UserResponseDTO(user.getPublicId(), user.getNickname(), profileImagePublicId, user.getBio());
   }
 }

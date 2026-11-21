@@ -28,6 +28,7 @@
 | `public_id` | `CHAR(26)` | NO | — | — | 외부 노출용 식별자(ULID) |
 | `device_token` | `VARCHAR(255)` | NO | — | — | 프론트가 전달하는 기기 개별 토큰(로그인 조회용, 참조 키로 사용 금지) |
 | `nickname` | `VARCHAR(30)` | NO | — | — | 닉네임(수정 가능한 값, 식별/참조 불가) |
+| `bio` | `VARCHAR(100)` | YES | — | — | 마이페이지 한 줄 소개. 생성 시 생략할 수 있습니다. |
 | `profile_image_id` | `BIGINT` | NO | FK | — | 대표 이미지 images.id(가입 시 기본 이미지 중 랜덤 부여) |
 | `created_at` | `DATETIME(6)` | NO | — | `CURRENT_TIMESTAMP(6)` | 생성일시 |
 | `created_by` | `BIGINT` | YES | — | — | 생성 주체 user id(가입/시스템은 NULL) |
