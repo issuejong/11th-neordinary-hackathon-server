@@ -7,6 +7,7 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.oas.models.parameters.HeaderParameter;
 import java.util.Arrays;
+import java.util.Objects;
 import org.springdoc.core.customizers.OperationCustomizer;
 import org.springdoc.core.utils.SpringDocUtils;
 import org.springframework.context.annotation.Bean;
@@ -39,16 +40,18 @@ public class SwaggerConfig {
   @Bean
   public OperationCustomizer loginUserHeaderCustomizer() {
     return (operation, handlerMethod) -> {
-      boolean needsLogin = Arrays.stream(handlerMethod.getMethodParameters())
-          .anyMatch(p -> p.hasParameterAnnotation(LoginUser.class));
-      if (needsLogin) {
-        operation.addParametersItem(new HeaderParameter()
-            .name(LoginUser.HEADER)
-            .required(true)
-            .description("요청한 사용자의 기기 토큰 (임시 인증). 데모 사용자: " + DemoData.USER_DEVICE_TOKEN)
-            .example(DemoData.USER_DEVICE_TOKEN)
-            .schema(new StringSchema()));
-      }
+      Arrays.stream(handlerMethod.getMethodParameters())
+          .map(p -> p.getParameterAnnotation(LoginUser.class))
+          .filter(Objects::nonNull)
+          .findFirst()
+          .ifPresent(loginUser -> operation.addParametersItem(new HeaderParameter()
+              .name(LoginUser.HEADER)
+              .required(loginUser.required())
+              .description(loginUser.required()
+                  ? "요청한 사용자의 기기 토큰 (임시 인증). 데모 사용자: " + DemoData.USER_DEVICE_TOKEN
+                  : "선택 헤더. 생략하면 사용자별 상태를 표시하지 않습니다.")
+              .example(DemoData.USER_DEVICE_TOKEN)
+              .schema(new StringSchema())));
       return operation;
     };
   }

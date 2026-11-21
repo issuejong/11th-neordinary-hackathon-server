@@ -8,6 +8,16 @@ import java.util.List;
 
 public class RoutineResponseDTO {
 
+  @Schema(description = "루틴 상호작용 집계와 내 상태")
+  public record Interactions(
+      long likeCount,
+      boolean likedByMe,
+      long inProgressCount,
+      long completedCount,
+      @Schema(allowableValues = {"NOT_PARTICIPATING", "IN_PROGRESS", "COMPLETED"}) String myParticipationStatus
+  ) {
+  }
+
   @Schema(name = "RoutineDetailResponse", description = "루틴 상세")
   public record Detail(
       @Schema(description = "루틴 publicId", example = "01KB0000000000000000RTN001") String routineId,

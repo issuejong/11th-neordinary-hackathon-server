@@ -86,6 +86,16 @@ public class RoutineController {
     return ApiResponse.onSuccess(queryService.getDetail(routineId));
   }
 
+  @Operation(summary = "루틴 상호작용 조회", description = "좋아요 수, 내 좋아요 여부, 참여 상태별 인원과 내 참여 상태를 반환합니다.")
+  @GetMapping("/{routineId}/interactions")
+  public ApiResponse<RoutineResponseDTO.Interactions> findInteractions(
+      @LoginUser Long userId,
+      @Parameter(description = "루틴 publicId", example = DemoData.ROUTINE_ID)
+      @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String routineId
+  ) {
+    return ApiResponse.onSuccess(queryService.getInteractions(userId, routineId));
+  }
+
   @Operation(summary = "루틴 수정", description = "제목·소개를 수정하고 카드 목록은 요청 내용으로 전체 교체합니다. 작성자만 가능합니다.")
   @PutMapping("/{routineId}")
   public ApiResponse<RoutineResponseDTO.Detail> update(

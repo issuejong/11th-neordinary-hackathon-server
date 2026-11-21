@@ -37,15 +37,23 @@ public class User extends SoftDeletableEntity {
   @Column(nullable = false, length = 30)
   private String nickname;
 
+  @Column(length = 100)
+  private String bio;
+
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(name = "profile_image_id", nullable = false)
   private Image profileImage;
 
   public User(String publicId, String deviceToken, String nickname, Image profileImage) {
+    this(publicId, deviceToken, nickname, profileImage, null);
+  }
+
+  public User(String publicId, String deviceToken, String nickname, Image profileImage, String bio) {
     this.publicId = publicId;
     this.deviceToken = deviceToken;
     this.nickname = nickname;
     this.profileImage = profileImage;
+    this.bio = bio;
   }
 
   public void changeNickname(String nickname) {
