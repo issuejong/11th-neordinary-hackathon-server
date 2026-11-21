@@ -5,7 +5,7 @@ import com.example.server.domain.routine.dto.RoutineResponseDTO;
 import com.example.server.domain.routine.dto.RoutineSort;
 import com.example.server.domain.routine.entity.RoutineRankingSnapshot;
 import com.example.server.domain.routine.repository.RoutineRankingSnapshotRepository;
-import java.time.Duration;
+import com.example.server.domain.routine.support.RoutineProperties;
 import java.time.Instant;
 import java.util.ArrayList;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -33,10 +33,10 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class RoutineQueryServiceImpl implements RoutineQueryService {
 
-  private static final Duration RANKING_CURSOR_TTL = Duration.ofMinutes(15);
 
   private final RoutineRepository routineRepository;
   private final RoutineRankingSnapshotRepository rankings;
+  private final RoutineProperties routineProperties;
   private final RoutineCardRepository cardRepository;
   private final RoutineLikeRepository likeRepository;
   private final RoutineCommentRepository commentRepository;
@@ -100,7 +100,7 @@ public class RoutineQueryServiceImpl implements RoutineQueryService {
     if (next >= 0) {
       if (first) {
         snapshot = rankings.save(new RoutineRankingSnapshot(sort, authorId, participantId, ids,
-            now.plus(RANKING_CURSOR_TTL)));
+            now.plus(routineProperties.rankingCursorTtl())));
       }
       nextCursor = RoutineCursor.after(sort, next, snapshot.getPublicId()).encode();
     }

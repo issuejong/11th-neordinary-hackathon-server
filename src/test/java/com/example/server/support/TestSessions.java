@@ -31,11 +31,11 @@ public class TestSessions {
     }
     String token = publicId + "A".repeat(17);
     tx.executeWithoutResult(status -> users.findActiveIdByPublicId(publicId).ifPresent(userId -> {
-      if (leases.findByUser_PublicId(publicId).isEmpty()) {
-        TestAccountLease lease = new TestAccountLease(NEXT_SLOT.getAndIncrement(), users.getReferenceById(userId));
-        lease.claim(TestAccountTokens.hash(token), Instant.now().plusSeconds(3600));
-        leases.save(lease);
-      }
+      // 이미 슬롯이 있는 사용자(예: 8번 심사용 데모 유저)는 그 슬롯을 점유한다
+      TestAccountLease lease = leases.findByUser_PublicId(publicId)
+          .orElseGet(() -> new TestAccountLease(NEXT_SLOT.getAndIncrement(), users.getReferenceById(userId)));
+      lease.claim(TestAccountTokens.hash(token), Instant.now().plusSeconds(3600));
+      leases.save(lease);
     }));
     return "Bearer " + token;
   }

@@ -68,4 +68,33 @@ class ParticipationWorkApiTests extends ApiTestSupport {
     mvc.perform(get(path + "/draft").header(LoginUser.HEADER, auth))
         .andExpect(jsonPath("$.result.cards").isEmpty());
   }
+
+  @Test
+  void publishesResultForLegacyStatusOnlyCompletionWithoutServerError() throws Exception {
+    String participant = newUser();
+    String auth = authorization(participant);
+    String routineId = createRoutine(DEMO_USER_ID);
+    String participation = "/api/routines/" + routineId + "/participation";
+
+    mvc.perform(put(participation).header(LoginUser.HEADER, auth)).andExpect(status().isOk());
+    // 이전 버전(빈 본문 완료)으로 만들어진 데이터: 상태만 COMPLETED, 작성 결과 없음
+    Integer updated = tx.execute(status -> entityManager.createQuery("""
+            update RoutineParticipation p
+            set p.status = com.example.server.domain.routine.entity.RoutineParticipation.Status.COMPLETED,
+                p.completedAt = CURRENT_TIMESTAMP
+            where p.routine.id = (select r.id from Routine r where r.publicId = :r)
+              and p.user.id = (select u.id from AppUser u where u.publicId = :u)
+            """).setParameter("r", routineId).setParameter("u", participant).executeUpdate());
+    org.assertj.core.api.Assertions.assertThat(updated).isEqualTo(1);
+    Object stored = tx.execute(status -> entityManager.createQuery(
+            "select p.status from RoutineParticipation p where p.routine.publicId = :r and p.user.publicId = :u")
+        .setParameter("r", routineId).setParameter("u", participant).getSingleResult());
+    org.assertj.core.api.Assertions.assertThat(stored.toString()).isEqualTo("COMPLETED");
+    // 그 뒤 작성 결과를 제출해도 500이 아니라 결과가 공개되어야 한다
+    mvc.perform(put(participation + "/completion").header(LoginUser.HEADER, auth)
+            .contentType(MediaType.APPLICATION_JSON).content(participationResult(2)))
+        .andExpect(status().isOk());
+    mvc.perform(get("/api/routines/" + routineId + "/participation-results"))
+        .andExpect(jsonPath("$.result.totalCount").value(1));
+  }
 }

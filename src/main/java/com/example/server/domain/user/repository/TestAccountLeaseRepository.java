@@ -15,6 +15,8 @@ public interface TestAccountLeaseRepository extends JpaRepository<TestAccountLea
 
   boolean existsBySlot(Integer slot);
 
+  boolean existsByUser_Id(Long userId);
+
   @Query("""
       select new com.example.server.domain.user.repository.projection.TestAccountView(
           lease.slot, u.publicId, u.nickname, i.publicId, lease.expiresAt)

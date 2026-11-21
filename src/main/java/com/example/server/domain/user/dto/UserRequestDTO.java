@@ -1,6 +1,7 @@
 package com.example.server.domain.user.dto;
 
 import com.example.server.global.init.DemoData;
+import com.example.server.global.util.TextPatterns;
 import com.example.server.global.util.Ulid;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
@@ -18,12 +19,12 @@ public class UserRequestDTO {
   public static class UpdateProfile {
 
     @JsonProperty
-    @Schema(description = "새 닉네임 (2~10자)", example = "아침형인간")
+    @Schema(description = "새 닉네임 (2~10자). 예시는 데모 유저의 현재 이름이라 그대로 실행해도 중복되지 않습니다.", example = DemoData.USER_NICKNAME)
     private String nickname;
 
     @Schema(description = "한 줄 소개 (최대 50자). null을 보내면 지웁니다.", example = "매일 조금씩 운동해요.", nullable = true)
     @Size(max = 50)
-    @Pattern(regexp = "[^\\r\\n\\x0B\\f\\x85\\u2028\\u2029]*", message = "한 줄 소개에는 줄바꿈을 넣을 수 없습니다.")
+    @Pattern(regexp = TextPatterns.SINGLE_LINE, message = "한 줄 소개에는 " + TextPatterns.SINGLE_LINE_MESSAGE)
     private String bio;
 
     @Getter(AccessLevel.NONE)
