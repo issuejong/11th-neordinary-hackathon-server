@@ -34,15 +34,19 @@ class TestAccountApiTests extends ApiTestSupport {
   private TestAccountLeaseRepository leases;
 
   @Test
-  void anyoneCanRegisterUpToFiveSlotsWithoutCredentials() throws Exception {
-    register(6, "테스트 여섯째").andExpect(status().isBadRequest());
+  void anyoneCanRegisterUpToSevenSlotsWithoutCredentials() throws Exception {
+    register(8, "테스트 여덟째").andExpect(status().isBadRequest());
+    createAccount(6, "테스트 여섯째");
+    String lastId = createAccount(7, "테스트 일곱째");
     String id = createAccount(1, "테스트 첫째");
     register(1, "다른 이름").andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("TEST4092"));
     register(4, "테스트 첫째").andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("USER4091"));
     mvc.perform(get(BASE)).andExpect(status().isOk())
-        .andExpect(jsonPath("$.result[?(@.slot == 1)].publicId").value(id));
+        .andExpect(jsonPath("$.result[?(@.slot == 1)].publicId").value(id))
+        .andExpect(jsonPath("$.result[?(@.slot == 7)].publicId").value(lastId));
+    claim(BASE + "/" + lastId + "/claim");
     mvc.perform(post("/api/users/connect")).andExpect(status().isNotFound());
   }
 

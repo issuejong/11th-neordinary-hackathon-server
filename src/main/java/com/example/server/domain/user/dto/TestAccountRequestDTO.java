@@ -10,11 +10,11 @@ import jakarta.validation.constraints.Size;
 
 public class TestAccountRequestDTO {
 
-  public static final int MAX_SLOTS = 5;
+  public static final int MAX_SLOTS = 7;
 
   @Schema(name = "TestAccountRegisterRequest")
   public record Register(
-      @Schema(description = "첫 화면에 표시할 계정 위치 (1~5)", example = "1")
+      @Schema(description = "첫 화면에 표시할 계정 위치 (1~" + MAX_SLOTS + ")", example = "1")
       @NotNull @Min(1) @Max(MAX_SLOTS) Integer slot,
       @Schema(description = "테스트 계정 닉네임 (2~10자)", example = "아침친구")
       @NotBlank @Size(max = 30) String nickname,

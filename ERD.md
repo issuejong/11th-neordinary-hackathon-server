@@ -61,7 +61,7 @@
 | 컬럼 | 타입 | NULL 허용 | 키 | 의미 |
 | --- | --- | --- | --- | --- |
 | `id` | `BIGINT` | NO | PK, AI | 내부 식별자 |
-| `slot` | `INT` | NO | UNIQUE | 첫 화면 표시 위치(1~5) |
+| `slot` | `INT` | NO | UNIQUE | 첫 화면 표시 위치(1~7) |
 | `user_id` | `BIGINT` | NO | FK, UNIQUE | `users.id` |
 | `token_hash` | `VARCHAR(64)` | YES | UNIQUE | 서버가 발급한 점유 세션 토큰의 SHA-256 해시 |
 | `expires_at` | `DATETIME(6)` | YES | — | 현재 점유 세션의 만료 시각(UTC) |

@@ -34,7 +34,7 @@ public class TestAccountController {
 
   private final TestAccountService accounts;
 
-  @Operation(summary = "테스트 계정 목록", description = "등록한 최대 다섯 계정을 위치순으로 반환합니다.")
+  @Operation(summary = "테스트 계정 목록", description = "등록한 테스트 계정을 슬롯 순서대로 반환합니다.")
   @GetMapping
   public ApiResponse<List<TestAccountResponseDTO.Account>> list() {
     return ApiResponse.onSuccess(accounts.list());
