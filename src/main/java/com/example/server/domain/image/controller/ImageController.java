@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-@Tag(name = "Image", description = "이미지 업로드 · 조회 (DB 저장)")
+@Tag(name = "Image")
 @RestController
 @RequestMapping("/api/images")
 @RequiredArgsConstructor
@@ -53,7 +53,10 @@ public class ImageController {
         .body(ApiResponse.of(SuccessStatus._CREATED, result));
   }
 
-  @Operation(summary = "이미지 조회", description = "이미지 바이너리를 그대로 반환합니다. (img 태그 / AsyncImage에서 바로 사용)")
+  @Operation(summary = "이미지 조회", description = "이미지 바이너리를 그대로 반환합니다. (img 태그 / AsyncImage에서 바로 사용)",
+      responses = @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "이미지 파일",
+          content = @io.swagger.v3.oas.annotations.media.Content(mediaType = "image/*",
+              schema = @io.swagger.v3.oas.annotations.media.Schema(type = "string", format = "binary"))))
   @GetMapping("/{imageId}")
   public ResponseEntity<byte[]> find(
       @Parameter(description = "이미지 publicId", example = DemoData.IMAGE_ID)

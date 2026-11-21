@@ -31,7 +31,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Routine", description = "루틴 목록 · 생성 · 상세 조회 · 수정 · 삭제")
+@Tag(name = "Routine")
 @RestController
 @RequestMapping("/api/routines")
 @RequiredArgsConstructor
@@ -50,7 +50,7 @@ public class RoutineController {
   @GetMapping
   public ApiResponse<RoutineResponseDTO.Page> list(
       @Parameter(description = "정렬: latest(최신순), likes(좋아요순), participants(참여자순)",
-          schema = @Schema(allowableValues = {"latest", "likes", "participants"}, defaultValue = "latest"))
+          example = "latest", schema = @Schema(allowableValues = {"latest", "likes", "participants"}, defaultValue = "latest"))
       @RequestParam(defaultValue = "latest")
       @Pattern(regexp = RoutineSort.REGEX, message = "sort는 latest, likes, participants 중 하나여야 합니다.") String sort,
       @Parameter(description = "작성자 publicId (마이페이지 내 루틴). 생략하면 전체 루틴", example = DemoData.USER_ID)
