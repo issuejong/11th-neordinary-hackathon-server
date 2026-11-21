@@ -1,0 +1,41 @@
+/* Swagger UI 커스텀 테마 — 차분한 남색 · 회색 톤 */
+.swagger-ui { --ink: #0f172a; --muted: #475569; --line: #e2e8f0; --soft: #f8fafc; --accent: #2563eb; }
+.swagger-ui, .swagger-ui .info, .swagger-ui .opblock-tag, .swagger-ui .opblock .opblock-summary-description {
+  font-family: "Pretendard", "Apple SD Gothic Neo", -apple-system, "Segoe UI", sans-serif;
+}
+.swagger-ui .topbar { background: var(--ink); padding: 6px 0; }
+.swagger-ui .info { margin: 36px 0 24px; }
+.swagger-ui .info .title { color: var(--ink); font-size: 30px; letter-spacing: -0.4px; }
+.swagger-ui .info .title small { background: #64748b; }
+.swagger-ui .info .title small.version-stamp { background: var(--accent); }
+.swagger-ui .info .renderedMarkdown, .swagger-ui .info p, .swagger-ui .info li { color: var(--muted); font-size: 14px; line-height: 1.7; }
+.swagger-ui .info .renderedMarkdown h3 {
+  color: var(--ink); font-size: 15px; font-weight: 700; margin: 26px 0 8px;
+  padding-left: 10px; border-left: 3px solid var(--accent);
+}
+/* 코드 표기: 보라색 → 남색 글씨 + 연회색 배경 */
+.swagger-ui .markdown code, .swagger-ui .renderedMarkdown code, .swagger-ui .info code {
+  color: #1e3a8a; background: #f1f5f9; border: 1px solid var(--line);
+  border-radius: 5px; padding: 1px 6px; font-size: 12.5px; font-weight: 500;
+}
+/* 심사용 빠른 시작 박스 */
+.swagger-ui .info .renderedMarkdown blockquote {
+  margin: 4px 0 8px; padding: 14px 18px; border: 1px solid #bfdbfe; border-left: 4px solid var(--accent);
+  background: #eff6ff; border-radius: 10px;
+}
+.swagger-ui .info .renderedMarkdown blockquote p, .swagger-ui .info .renderedMarkdown blockquote li { color: var(--ink); margin: 2px 0; }
+/* 에러 코드 표 (접기) */
+.swagger-ui .info .renderedMarkdown details { margin-top: 22px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+.swagger-ui .info .renderedMarkdown summary { cursor: pointer; padding: 12px 16px; color: var(--ink); }
+.swagger-ui .info .renderedMarkdown details table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.swagger-ui .info .renderedMarkdown details th { text-align: left; color: var(--muted); background: var(--soft); padding: 8px 16px; border-top: 1px solid var(--line); }
+.swagger-ui .info .renderedMarkdown details td { padding: 7px 16px; border-top: 1px solid var(--line); color: var(--ink); }
+.swagger-ui .info .renderedMarkdown details tr:nth-child(even) td { background: var(--soft); }
+/* 태그 · API 카드 */
+.swagger-ui .opblock-tag { border-bottom: 1px solid var(--line); color: var(--ink); }
+.swagger-ui .opblock-tag small { color: var(--muted); }
+.swagger-ui .opblock { border-radius: 8px; box-shadow: none; }
+.swagger-ui .opblock .opblock-summary-description { color: var(--muted); }
+.swagger-ui .btn.authorize { color: var(--accent); border-color: var(--accent); }
+.swagger-ui .btn.authorize svg { fill: var(--accent); }
+.swagger-ui .scheme-container { box-shadow: none; border-bottom: 1px solid var(--line); background: var(--soft); }
