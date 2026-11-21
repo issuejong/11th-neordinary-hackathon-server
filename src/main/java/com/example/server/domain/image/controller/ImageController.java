@@ -36,7 +36,12 @@ public class ImageController {
   private final ImageQueryService queryService;
 
   @Operation(summary = "이미지 업로드",
-      description = "jpeg, png, heic, heif, webp, gif / 최대 10MB. 응답의 imageId를 루틴 카드 생성에 사용합니다.")
+      description = """
+          - 형식: jpg, png, heic, heif, webp, gif (파일 내용으로 판별)
+          - 용량: 최대 10MB / 해상도: 가로 · 세로 최대 8192px
+          - 응답의 imageId를 루틴 스텝(카드) 생성에 사용합니다.
+          - 권장: 앱에서 긴 변 2048px, JPEG 품질 0.8 정도로 줄여서 업로드
+          """)
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<ApiResponse<ImageResponseDTO.Upload>> upload(
       @LoginUser Long userId,
