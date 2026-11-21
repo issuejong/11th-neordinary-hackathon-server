@@ -11,10 +11,10 @@ import com.example.server.domain.routine.repository.RoutineCardRepository;
 import com.example.server.domain.routine.repository.RoutineRepository;
 import com.example.server.domain.routine.service.query.RoutineQueryService;
 import com.example.server.domain.user.entity.User;
+import com.example.server.domain.user.repository.UserRepository;
 import com.example.server.global.exception.BusinessException;
 import com.example.server.global.response.code.status.ErrorStatus;
 import com.example.server.global.util.Ulid;
-import jakarta.persistence.EntityManager;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,12 +32,12 @@ public class RoutineCommandServiceImpl implements RoutineCommandService {
   private final RoutineCardRepository cardRepository;
   private final ImageRepository imageRepository;
   private final RoutineQueryService routineQueryService;
-  private final EntityManager entityManager;
+  private final UserRepository userRepository;
 
   @Override
   @Transactional
   public RoutineResponseDTO.Detail create(Long userId, RoutineRequestDTO.Save request) {
-    User owner = entityManager.getReference(User.class, userId);
+    User owner = userRepository.getReferenceById(userId);
     Routine routine = routineRepository.save(
         new Routine(Ulid.generate(), owner, request.title(), request.content()));
     saveCards(routine, request.cards(), userId);
