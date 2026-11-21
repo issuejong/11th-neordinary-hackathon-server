@@ -8,6 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
@@ -132,11 +133,17 @@ public class GlobalExceptionHandler {
     return failure(ErrorStatus._INTERNAL_SERVER_ERROR);
   }
 
+  /**
+   * 에러 응답은 Accept 헤더와 무관하게 항상 JSON으로 보낸다.
+   * (Content-Type을 미리 지정하면 콘텐츠 협상을 건너뛰므로, Accept: text/plain 등에서 500으로 바뀌지 않는다)
+   */
   private ResponseEntity<ApiResponse<Void>> failure(BaseCode code) {
-    return ResponseEntity.status(code.getHttpStatus()).body(ApiResponse.onFailure(code));
+    return ResponseEntity.status(code.getHttpStatus()).contentType(MediaType.APPLICATION_JSON)
+        .body(ApiResponse.onFailure(code));
   }
 
   private <T> ResponseEntity<ApiResponse<T>> failure(BaseCode code, T data) {
-    return ResponseEntity.status(code.getHttpStatus()).body(ApiResponse.onFailure(code, data));
+    return ResponseEntity.status(code.getHttpStatus()).contentType(MediaType.APPLICATION_JSON)
+        .body(ApiResponse.onFailure(code, data));
   }
 }
