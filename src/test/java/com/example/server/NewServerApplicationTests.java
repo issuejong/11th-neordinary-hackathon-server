@@ -61,7 +61,7 @@ class NewServerApplicationTests {
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.isSuccess").value(false))
         .andExpect(jsonPath("$.code").value("COMMON400"))
-        .andExpect(jsonPath("$.result").doesNotHaveJsonPath());
+        .andExpect(jsonPath("$.result.name").isString());
 
     mvc.perform(get("/api/v1/examples/0"))
         .andExpect(status().isNotFound())
