@@ -28,7 +28,7 @@ JDK 25가 PATH에 없다면 `JAVA_HOME`을 JDK 25로 지정해서 실행하세�
 com.example.server
 ├── global/            # 공통: config, exception(GlobalExceptionHandler, BusinessException),
 │                      #       response(ApiResponse, SuccessStatus/ErrorStatus), entity(Base/ActorAudited/SoftDeletable)
-└── domain/<도메인>/    # user, image, routine, example(참고용 샘플)
+└── domain/<도메인>/    # user, image, routine
     ├── controller/
     ├── dto/            # XxxRequestDTO(내부 record로 Create 등), XxxResponseDTO
     ├── converter/      # Entity ↔ DTO 변환
@@ -36,7 +36,7 @@ com.example.server
     ├── repository/
     └── service/command/ · service/query/   # 인터페이스 + Impl, 쓰기/읽기 분리
 ```
-새 API는 `domain/example`을 그대로 따라 만드세요.
+새 API는 `domain/routine`(controller → service(command/query) → repository, DTO는 converter로 변환)을 따라 만드세요.
 
 ## 구현된 API (Swagger 예시값으로 바로 실행 가능)
 | 메서드 | 경로 | 설명 | 인증 헤더 |
@@ -50,7 +50,11 @@ com.example.server
 | DELETE | `/api/routines/{routineId}` | 루틴 소프트 삭제, 작성자만 | O |
 
 - **임시 인증**: 컨트롤러는 `@LoginUser Long userId`로 사용자를 받고, 지금은 `X-Device-Token` 헤더(users.device_token)로 해석합니다. publicId는 응답에 노출되므로 인증에 쓰면 안 되고, 기기 토큰은 응답에 절대 넣지 마세요(`global/auth/LoginUserArgumentResolver`). 유저 도메인(가입/로그인)이 완성되면 **리졸버만 교체**하고 컨트롤러는 그대로 둡니다. Swagger에는 헤더 입력칸이 자동으로 추가됩니다.
-- **데모 데이터**: `global/init/DemoDataInitializer`가 시작할 때 기본 이미지 3개, 데모 유저, 루틴 2개를 고정 publicId(`DemoData`)로 넣습니다(이미 있으면 건너뜀). Swagger 예시값이 이 ID를 가리키므로 지우거나 바꾸지 마세요.
+- **데모 데이터**: `global/init/DemoDataInitializer`가 시작할 때 기본 이미지 3개, 데모 유저, 루틴 3개(상세 · 수정 · 삭제 예시용), 댓글 2개(수정 · 삭제 예시용)를 고정 publicId(`DemoData`)로 넣습니다(이미 있으면 건너뜀). Swagger 예시값이 이 ID를 가리키므로 지우거나 바꾸지 마세요.
+  - 심사자가 삭제 예시를 실행해도 **1분마다 자동 복구**됩니다(`restoreDeletedDemoData`, `app.demo.restore-interval`).
+  - 수정 예시와 삭제 예시는 서로 다른 데이터를 가리키게 하세요(삭제 후 수정 예시가 404가 되지 않도록).
+- **Swagger 스키마 이름**: springdoc은 클래스 단순 이름으로 스키마를 만들어서, 이름이 같은 내부 record(`Card`, `Create` 등)는 서로 덮어씁니다. DTO record에는 `@Schema(name = "RoutineCardRequest")`처럼 고유한 이름을 붙이세요.
+- **정책 값은 설정으로**: 이미지 해상도 · 캐시 등은 `application.yml`의 `app.*`(`@ConfigurationProperties`, 예: `ImageProperties`)에 두고 코드에 하드코딩하지 마세요.
 - ID는 `global/util/Ulid.generate()`로 만들고, 경로 변수는 `@Pattern(regexp = Ulid.REGEX)`로 검증합니다(형식 오류는 400).
 - 목록·상세 조회에서 이미지 바이너리(MEDIUMBLOB)를 읽지 않도록 projection(`select new ...View(...)`)으로 조회합니다.
 

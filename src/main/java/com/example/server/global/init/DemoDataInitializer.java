@@ -24,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -67,10 +68,48 @@ public class DemoDataInitializer implements ApplicationRunner {
           new RoutineCard(Ulid.generate(), routine, 1, image2, "자기 전 독서 20분", null, LocalTime.of(23, 0)));
       log.info("Demo routine created: {}", DemoData.EDITABLE_ROUTINE_ID);
     }
+    if (!routineRepository.existsByPublicId(DemoData.DELETABLE_ROUTINE_ID)) {
+      Routine routine = routineRepository.save(
+          new Routine(DemoData.DELETABLE_ROUTINE_ID, user, "삭제 테스트용 루틴", "Swagger에서 삭제를 시험해 보세요. 1분 안에 자동 복구됩니다."));
+      cardRepository.save(
+          new RoutineCard(Ulid.generate(), routine, 1, image3, "삭제해도 다시 돌아와요", null, LocalTime.of(12, 0)));
+      log.info("Demo routine created: {}", DemoData.DELETABLE_ROUTINE_ID);
+    }
+    if (!commentRepository.existsByPublicId(DemoData.DELETABLE_COMMENT_ID)) {
+      routineRepository.findByPublicIdAndDeletedAtIsNull(DemoData.ROUTINE_ID)
+          .ifPresent(routine -> commentRepository.save(
+              new RoutineComment(DemoData.DELETABLE_COMMENT_ID, routine, user, "삭제 예시용 댓글이에요.")));
+    }
     if (!commentRepository.existsByPublicId(DemoData.COMMENT_ID)) {
       routineRepository.findByPublicIdAndDeletedAtIsNull(DemoData.ROUTINE_ID)
           .ifPresent(routine -> commentRepository.save(
               new RoutineComment(DemoData.COMMENT_ID, routine, user, "오늘부터 해볼게요.")));
+    }
+    restoreDeletedDemoData(); // 재배포 직후에도 바로 복구
+  }
+
+  /**
+   * 심사자가 Swagger 예시로 데모 루틴 · 댓글을 삭제해도, 1분 안에 되살려서
+   * 다음 사람이 수정 · 삭제 예시를 실행해도 404가 나지 않게 한다.
+   */
+  @Scheduled(initialDelayString = "${app.demo.restore-interval:60s}", fixedDelayString = "${app.demo.restore-interval:60s}")
+  @Transactional
+  public void restoreDeletedDemoData() {
+    for (String publicId : List.of(DemoData.ROUTINE_ID, DemoData.EDITABLE_ROUTINE_ID, DemoData.DELETABLE_ROUTINE_ID)) {
+      routineRepository.findByPublicId(publicId)
+          .filter(routine -> routine.getDeletedAt() != null)
+          .ifPresent(routine -> {
+            routine.restoreDeleted(routine.getUser().getId());
+            log.info("Demo routine restored: {}", publicId);
+          });
+    }
+    for (String publicId : List.of(DemoData.COMMENT_ID, DemoData.DELETABLE_COMMENT_ID)) {
+      commentRepository.findByPublicId(publicId)
+          .filter(comment -> comment.getDeletedAt() != null)
+          .ifPresent(comment -> {
+            comment.restoreDeleted(comment.getUser().getId());
+            log.info("Demo comment restored: {}", publicId);
+          });
     }
   }
 

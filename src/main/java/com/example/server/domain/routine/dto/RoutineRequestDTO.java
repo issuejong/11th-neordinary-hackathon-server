@@ -16,7 +16,7 @@ import java.util.List;
 public class RoutineRequestDTO {
 
   /** 루틴 생성 / 전체 수정 공용 요청 (수정 시 카드 목록은 통째로 교체) */
-  @Schema(description = "루틴 생성 · 수정 요청")
+  @Schema(name = "RoutineSaveRequest", description = "루틴 생성 · 수정 요청")
   public record Save(
       @Schema(description = "루틴 제목 (필수, 5~30자)", example = "갓생 아침 루틴", requiredMode = Schema.RequiredMode.REQUIRED)
       @NotBlank(message = "루틴 제목은 필수입니다.")
@@ -34,7 +34,7 @@ public class RoutineRequestDTO {
   ) {
   }
 
-  @Schema(description = "루틴 카드")
+  @Schema(name = "RoutineCardRequest", description = "루틴 카드")
   public record Card(
       @Schema(description = "카드 이미지 publicId (필수, 이미지 업로드 API 응답의 imageId)", example = DemoData.IMAGE_ID,
           requiredMode = Schema.RequiredMode.REQUIRED)
