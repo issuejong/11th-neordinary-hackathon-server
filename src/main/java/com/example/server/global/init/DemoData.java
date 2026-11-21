@@ -18,6 +18,9 @@ public final class DemoData {
   /** 상세 조회 예시용 루틴 */
   public static final String ROUTINE_ID = "01KB0000000000000000RTN001";
 
+  /** Swagger 댓글 수정 · 삭제 예시 */
+  public static final String COMMENT_ID = "01KB0000000000000000CMT001";
+
   /** 수정 · 삭제 예시용 루틴 (데모 사용자 소유) */
   public static final String EDITABLE_ROUTINE_ID = "01KB0000000000000000RTN002";
 

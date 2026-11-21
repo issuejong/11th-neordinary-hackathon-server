@@ -4,7 +4,9 @@ import com.example.server.domain.image.entity.Image;
 import com.example.server.domain.image.repository.ImageRepository;
 import com.example.server.domain.routine.entity.Routine;
 import com.example.server.domain.routine.entity.RoutineCard;
+import com.example.server.domain.routine.entity.RoutineComment;
 import com.example.server.domain.routine.repository.RoutineCardRepository;
+import com.example.server.domain.routine.repository.RoutineCommentRepository;
 import com.example.server.domain.routine.repository.RoutineRepository;
 import com.example.server.domain.user.entity.User;
 import com.example.server.global.util.Ulid;
@@ -37,6 +39,7 @@ public class DemoDataInitializer implements ApplicationRunner {
   private final ImageRepository imageRepository;
   private final RoutineRepository routineRepository;
   private final RoutineCardRepository cardRepository;
+  private final RoutineCommentRepository commentRepository;
   private final EntityManager entityManager;
 
   @Override
@@ -63,6 +66,11 @@ public class DemoDataInitializer implements ApplicationRunner {
       cardRepository.save(
           new RoutineCard(Ulid.generate(), routine, 1, image2, "자기 전 독서 20분", null, LocalTime.of(23, 0)));
       log.info("Demo routine created: {}", DemoData.EDITABLE_ROUTINE_ID);
+    }
+    if (!commentRepository.existsByPublicId(DemoData.COMMENT_ID)) {
+      routineRepository.findByPublicIdAndDeletedAtIsNull(DemoData.ROUTINE_ID)
+          .ifPresent(routine -> commentRepository.save(
+              new RoutineComment(DemoData.COMMENT_ID, routine, user, "오늘부터 해볼게요.")));
     }
   }
 
