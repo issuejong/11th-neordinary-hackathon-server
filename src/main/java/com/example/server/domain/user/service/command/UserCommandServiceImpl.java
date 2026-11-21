@@ -38,8 +38,11 @@ public class UserCommandServiceImpl implements UserCommandService {
 
   @Override
   @Transactional
-  public UserResponseDTO create(String deviceToken, UserRequestDTO.Create request) {
-    String nickname = request.nickname().strip();
+  public UserResponseDTO create(String requestedNickname, String bio) {
+    String nickname = requestedNickname.strip();
+    if (nickname.length() < 2 || nickname.length() > 10) {
+      throw new BusinessException(ErrorStatus.USER_INVALID_NICKNAME);
+    }
     checkNicknameAvailability(nickname, null);
 
     List<ImageKey> images = imageRepository.findUsableKeys(DEFAULT_PROFILE_IMAGE_IDS, null);
@@ -48,7 +51,7 @@ public class UserCommandServiceImpl implements UserCommandService {
     }
     ImageKey selected = images.get(ThreadLocalRandom.current().nextInt(images.size()));
     Image profileImage = imageRepository.getReferenceById(selected.id());
-    User user = save(new User(Ulid.generate(), deviceToken, nickname, profileImage, normalizeBio(request.bio())));
+    User user = save(new User(Ulid.generate(), nickname, profileImage, normalizeBio(bio)));
     return UserConverter.toResponse(user, selected.publicId());
   }
 

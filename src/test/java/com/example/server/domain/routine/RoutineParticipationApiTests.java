@@ -18,28 +18,28 @@ class RoutineParticipationApiTests extends ApiTestSupport {
 
   @Test
   void startsCancelsRestartsAndCompletesParticipation() throws Exception {
-    String routineId = createRoutine(DEMO_TOKEN);
+    String routineId = createRoutine(DEMO_USER_ID);
     String token = newUser();
     String base = "/api/routines/" + routineId;
     String path = base + "/participation";
 
-    mvc.perform(put(path + "/completion").header(LoginUser.HEADER, token))
+    mvc.perform(put(path + "/completion").header(LoginUser.HEADER, authorization(token)))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("PARTICIPATION409"));
-    mvc.perform(put(path).header(LoginUser.HEADER, token))
+    mvc.perform(put(path).header(LoginUser.HEADER, authorization(token)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.result.inProgressCount").value(1))
         .andExpect(jsonPath("$.result.myParticipationStatus").value("IN_PROGRESS"));
     RoutineParticipation original = readParticipation(routineId, token);
-    mvc.perform(put(path).header(LoginUser.HEADER, token))
+    mvc.perform(put(path).header(LoginUser.HEADER, authorization(token)))
         .andExpect(jsonPath("$.result.inProgressCount").value(1));
     assertThat(readParticipation(routineId, token).getJoinedAt()).isEqualTo(original.getJoinedAt());
 
-    mvc.perform(delete(path).header(LoginUser.HEADER, token))
+    mvc.perform(delete(path).header(LoginUser.HEADER, authorization(token)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.result.inProgressCount").value(0))
         .andExpect(jsonPath("$.result.myParticipationStatus").value("NOT_PARTICIPATING"));
-    mvc.perform(delete(path).header(LoginUser.HEADER, token))
+    mvc.perform(delete(path).header(LoginUser.HEADER, authorization(token)))
         .andExpect(status().isOk());
     assertThat(readParticipation(routineId, token).getDeletedAt()).isNotNull();
 
@@ -48,7 +48,7 @@ class RoutineParticipationApiTests extends ApiTestSupport {
         update RoutineParticipation p set p.joinedAt = :previous, p.completedAt = :previous where p.id = :id
         """).setParameter("previous", LocalDateTime.of(2020, 1, 1, 0, 0))
         .setParameter("id", original.getId()).executeUpdate());
-    mvc.perform(put(path).header(LoginUser.HEADER, token))
+    mvc.perform(put(path).header(LoginUser.HEADER, authorization(token)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.result.inProgressCount").value(1));
     RoutineParticipation restarted = readParticipation(routineId, token);
@@ -57,20 +57,20 @@ class RoutineParticipationApiTests extends ApiTestSupport {
     assertThat(restarted.getCompletedAt()).isNull();
     assertThat(restarted.getDeletedAt()).isNull();
 
-    mvc.perform(put(path + "/completion").header(LoginUser.HEADER, token))
+    mvc.perform(put(path + "/completion").header(LoginUser.HEADER, authorization(token)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.result.inProgressCount").value(0))
         .andExpect(jsonPath("$.result.completedCount").value(1))
         .andExpect(jsonPath("$.result.myParticipationStatus").value("COMPLETED"));
     LocalDateTime completedAt = readParticipation(routineId, token).getCompletedAt();
     assertThat(completedAt).isNotNull();
-    mvc.perform(put(path + "/completion").header(LoginUser.HEADER, token))
+    mvc.perform(put(path + "/completion").header(LoginUser.HEADER, authorization(token)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.result.completedCount").value(1));
     assertThat(readParticipation(routineId, token).getCompletedAt()).isEqualTo(completedAt);
-    mvc.perform(delete(path).header(LoginUser.HEADER, token))
+    mvc.perform(delete(path).header(LoginUser.HEADER, authorization(token)))
         .andExpect(status().isConflict());
-    mvc.perform(get(base + "/interactions").header(LoginUser.HEADER, token))
+    mvc.perform(get(base + "/interactions").header(LoginUser.HEADER, authorization(token)))
         .andExpect(jsonPath("$.result.completedCount").value(1))
         .andExpect(jsonPath("$.result.myParticipationStatus").value("COMPLETED"));
   }
@@ -78,29 +78,29 @@ class RoutineParticipationApiTests extends ApiTestSupport {
   @Test
   void rejectsOwnerAndInvalidRequests() throws Exception {
     String path = "/api/routines/" + DemoData.ROUTINE_ID + "/participation";
-    mvc.perform(put(path).header(LoginUser.HEADER, DEMO_TOKEN))
+    mvc.perform(put(path).header(LoginUser.HEADER, authorization(DEMO_USER_ID)))
         .andExpect(status().isForbidden())
         .andExpect(jsonPath("$.code").value("PARTICIPATION403"));
-    mvc.perform(delete(path).header(LoginUser.HEADER, DEMO_TOKEN)).andExpect(status().isForbidden());
-    mvc.perform(put(path + "/completion").header(LoginUser.HEADER, DEMO_TOKEN)).andExpect(status().isForbidden());
-    mvc.perform(put(path)).andExpect(status().isBadRequest());
-    mvc.perform(put("/api/routines/invalid/participation").header(LoginUser.HEADER, DEMO_TOKEN))
+    mvc.perform(delete(path).header(LoginUser.HEADER, authorization(DEMO_USER_ID))).andExpect(status().isForbidden());
+    mvc.perform(put(path + "/completion").header(LoginUser.HEADER, authorization(DEMO_USER_ID))).andExpect(status().isForbidden());
+    mvc.perform(put(path)).andExpect(status().isUnauthorized());
+    mvc.perform(put("/api/routines/invalid/participation").header(LoginUser.HEADER, authorization(DEMO_USER_ID)))
         .andExpect(status().isBadRequest());
-    mvc.perform(put("/api/routines/" + UNKNOWN_ID + "/participation").header(LoginUser.HEADER, DEMO_TOKEN))
+    mvc.perform(put("/api/routines/" + UNKNOWN_ID + "/participation").header(LoginUser.HEADER, authorization(DEMO_USER_ID)))
         .andExpect(status().isNotFound());
   }
 
   @Test
   void swaggerCompletionExampleUsesANonOwnerWithActiveParticipation() throws Exception {
     mvc.perform(put("/api/routines/" + DemoData.ROUTINE_ID + "/participation/completion")
-            .header(LoginUser.HEADER, DemoData.PARTICIPANT_DEVICE_TOKEN))
+            .header(LoginUser.HEADER, authorization(DemoData.PARTICIPANT_ID)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.result.myParticipationStatus").value("COMPLETED"));
   }
 
   private RoutineParticipation readParticipation(String routineId, String token) {
     return tx.execute(status -> entityManager.createQuery("""
-        from RoutineParticipation p where p.routine.publicId = :routineId and p.user.deviceToken = :token
+        from RoutineParticipation p where p.routine.publicId = :routineId and p.user.publicId = :token
         """, RoutineParticipation.class).setParameter("routineId", routineId)
         .setParameter("token", token).getSingleResult());
   }

@@ -28,7 +28,7 @@ public class RoutineParticipationController {
   @Operation(summary = "루틴 참여 시작", description = "취소한 참여를 다시 시작하면 시작 시각을 갱신하고 완료 시각을 초기화합니다.")
   @PutMapping
   public ApiResponse<Interactions> join(
-      @LoginUser(example = DemoData.PARTICIPANT_DEVICE_TOKEN) Long userId,
+      @LoginUser Long userId,
       @Parameter(description = "루틴 publicId", example = DemoData.EDITABLE_ROUTINE_ID)
       @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String routineId
   ) {
@@ -38,7 +38,7 @@ public class RoutineParticipationController {
   @Operation(summary = "루틴 참여 취소", description = "진행 중인 참여를 취소합니다. 완료된 참여를 취소하면 409를 반환합니다.")
   @DeleteMapping
   public ApiResponse<Interactions> cancel(
-      @LoginUser(example = DemoData.PARTICIPANT_DEVICE_TOKEN) Long userId,
+      @LoginUser Long userId,
       @Parameter(description = "루틴 publicId", example = DemoData.EDITABLE_ROUTINE_ID)
       @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String routineId
   ) {
@@ -48,7 +48,7 @@ public class RoutineParticipationController {
   @Operation(summary = "루틴 참여 완료", description = "진행 중인 참여를 완료 처리합니다. 완료된 참여에 같은 요청을 보내면 완료 상태를 반환합니다.")
   @PutMapping("/completion")
   public ApiResponse<Interactions> complete(
-      @LoginUser(example = DemoData.PARTICIPANT_DEVICE_TOKEN) Long userId,
+      @LoginUser Long userId,
       @Parameter(description = "루틴 publicId", example = DemoData.ROUTINE_ID)
       @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String routineId
   ) {

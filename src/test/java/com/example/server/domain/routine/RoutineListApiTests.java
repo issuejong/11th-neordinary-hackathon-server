@@ -45,7 +45,7 @@ class RoutineListApiTests extends ApiTestSupport {
   }
 
   private User user(String token) {
-    return entityManager.createQuery("from AppUser u where u.deviceToken = :t", User.class)
+    return entityManager.createQuery("from AppUser u where u.publicId = :t", User.class)
         .setParameter("t", token).getSingleResult();
   }
 
@@ -107,8 +107,8 @@ class RoutineListApiTests extends ApiTestSupport {
   @Test
   @DisplayName("sort 생략 시 latest: 방금 만든 루틴이 맨 앞, 전체가 최신순")
   void defaultIsLatest() throws Exception {
-    String older = createRoutine(DEMO_TOKEN);
-    String newer = createRoutine(DEMO_TOKEN);
+    String older = createRoutine(DEMO_USER_ID);
+    String newer = createRoutine(DEMO_USER_ID);
 
     List<Map<String, Object>> routines = list("?size=50");
     assertThat(ids(routines)).startsWith(newer, older);
@@ -120,7 +120,7 @@ class RoutineListApiTests extends ApiTestSupport {
   @Test
   @DisplayName("목록 항목: 작성자 · 썸네일(첫 스텝 이미지) · 스텝 수 · 좋아요 수 · 참여자 수")
   void itemFields() throws Exception {
-    String routineId = createRoutine(DEMO_TOKEN);
+    String routineId = createRoutine(DEMO_USER_ID);
     mvc.perform(get("/api/routines").param("size", "1"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.result.routines[0].routineId").value(routineId))
@@ -140,8 +140,8 @@ class RoutineListApiTests extends ApiTestSupport {
   @Test
   @DisplayName("삭제된 루틴은 목록에서 빠진다")
   void excludesDeleted() throws Exception {
-    String routineId = createRoutine(DEMO_TOKEN);
-    mvc.perform(delete("/api/routines/" + routineId).header(LoginUser.HEADER, DEMO_TOKEN))
+    String routineId = createRoutine(DEMO_USER_ID);
+    mvc.perform(delete("/api/routines/" + routineId).header(LoginUser.HEADER, authorization(DEMO_USER_ID)))
         .andExpect(status().isOk());
     for (String sort : List.of("latest", "likes", "participants")) {
       assertThat(ids(list("?size=50&sort=" + sort))).doesNotContain(routineId);
@@ -159,8 +159,8 @@ class RoutineListApiTests extends ApiTestSupport {
   @Test
   @DisplayName("likes: 좋아요 많은 순, 취소된 좋아요는 세지 않음, 동점이면 최신순")
   void sortByLikes() throws Exception {
-    String five = createRoutine(DEMO_TOKEN);
-    String fourWithCanceled = createRoutine(DEMO_TOKEN);
+    String five = createRoutine(DEMO_USER_ID);
+    String fourWithCanceled = createRoutine(DEMO_USER_ID);
     like(five, 5, 0);
     like(fourWithCanceled, 4, 3); // 취소 3건 → 4로 집계 (7이 아님)
 
@@ -176,8 +176,8 @@ class RoutineListApiTests extends ApiTestSupport {
   @Test
   @DisplayName("participants: 참여 중 + 완료 인원순, 참여 취소는 세지 않음, 동점이면 최신순")
   void sortByParticipants() throws Exception {
-    String six = createRoutine(DEMO_TOKEN);
-    String fiveWithCanceled = createRoutine(DEMO_TOKEN);
+    String six = createRoutine(DEMO_USER_ID);
+    String fiveWithCanceled = createRoutine(DEMO_USER_ID);
     participate(six, 3, 3, 0);
     participate(fiveWithCanceled, 2, 3, 4); // 취소 4건 → 5로 집계
 
@@ -223,8 +223,8 @@ class RoutineListApiTests extends ApiTestSupport {
   @Test
   @DisplayName("첫 페이지: size · hasNext · nextCursor, 마지막 페이지는 nextCursor=null")
   void firstAndLastPage() throws Exception {
-    createRoutine(DEMO_TOKEN);
-    createRoutine(DEMO_TOKEN);
+    createRoutine(DEMO_USER_ID);
+    createRoutine(DEMO_USER_ID);
     mvc.perform(get("/api/routines").param("size", "1"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.result.size").value(1))
@@ -240,10 +240,10 @@ class RoutineListApiTests extends ApiTestSupport {
   @ValueSource(strings = {"latest", "likes", "participants"})
   void walkAllPages(String sort) throws Exception {
     for (int i = 0; i < 5; i++) {
-      createRoutine(DEMO_TOKEN);
+      createRoutine(DEMO_USER_ID);
     }
     // 동점(0개)이 많은 상태 + 일부만 카운트가 있도록
-    String top = createRoutine(DEMO_TOKEN);
+    String top = createRoutine(DEMO_USER_ID);
     if (sort.equals("likes")) {
       like(top, 2, 0);
     } else if (sort.equals("participants")) {
@@ -260,13 +260,13 @@ class RoutineListApiTests extends ApiTestSupport {
   @Test
   @DisplayName("스크롤 중 새 루틴이 생겨도 다음 페이지에 중복이 생기지 않는다 (latest)")
   void noDuplicateWhenNewRoutineAdded() throws Exception {
-    createRoutine(DEMO_TOKEN);
-    createRoutine(DEMO_TOKEN);
+    createRoutine(DEMO_USER_ID);
+    createRoutine(DEMO_USER_ID);
     String first = page("?size=2");
     List<String> firstIds = ids(JsonPath.read(first, "$.result.routines"));
     String cursor = JsonPath.read(first, "$.result.nextCursor");
 
-    String added = createRoutine(DEMO_TOKEN); // 첫 페이지를 본 뒤 새 글
+    String added = createRoutine(DEMO_USER_ID); // 첫 페이지를 본 뒤 새 글
 
     String second = page("?size=2&cursor=" + cursor);
     List<String> secondIds = ids(JsonPath.read(second, "$.result.routines"));
@@ -276,13 +276,13 @@ class RoutineListApiTests extends ApiTestSupport {
   @Test
   @DisplayName("커서 기준 루틴이 삭제돼도 다음 페이지를 계속 조회할 수 있다")
   void cursorSurvivesDeletion() throws Exception {
-    String a = createRoutine(DEMO_TOKEN);
-    String b = createRoutine(DEMO_TOKEN); // 최신순 첫 번째
+    String a = createRoutine(DEMO_USER_ID);
+    String b = createRoutine(DEMO_USER_ID); // 최신순 첫 번째
     String first = page("?size=1");
     assertThat(ids(JsonPath.read(first, "$.result.routines"))).containsExactly(b);
     String cursor = JsonPath.read(first, "$.result.nextCursor");
 
-    mvc.perform(delete("/api/routines/" + b).header(LoginUser.HEADER, DEMO_TOKEN)).andExpect(status().isOk());
+    mvc.perform(delete("/api/routines/" + b).header(LoginUser.HEADER, authorization(DEMO_USER_ID))).andExpect(status().isOk());
 
     assertThat(ids(JsonPath.read(page("?size=1&cursor=" + cursor), "$.result.routines"))).containsExactly(a);
   }
@@ -307,7 +307,7 @@ class RoutineListApiTests extends ApiTestSupport {
     String me = newUser();
     String mine1 = createRoutine(me);
     String mine2 = createRoutine(me);
-    String others = createRoutine(DEMO_TOKEN);
+    String others = createRoutine(DEMO_USER_ID);
     like(mine1, 1, 0);
     participate(mine1, 1, 0, 0);
 
@@ -330,7 +330,7 @@ class RoutineListApiTests extends ApiTestSupport {
     List<String> mine = new java.util.ArrayList<>();
     for (int i = 0; i < 5; i++) {
       mine.add(createRoutine(me));
-      createRoutine(DEMO_TOKEN); // 사이사이 다른 사람 루틴
+      createRoutine(DEMO_USER_ID); // 사이사이 다른 사람 루틴
     }
     String author = publicIdOf(me);
     List<String> walked = new java.util.ArrayList<>();
@@ -348,7 +348,7 @@ class RoutineListApiTests extends ApiTestSupport {
   void filterByAuthorEdgeCases() throws Exception {
     String me = newUser();
     String deleted = createRoutine(me);
-    mvc.perform(delete("/api/routines/" + deleted).header(LoginUser.HEADER, me)).andExpect(status().isOk());
+    mvc.perform(delete("/api/routines/" + deleted).header(LoginUser.HEADER, authorization(me))).andExpect(status().isOk());
 
     mvc.perform(get("/api/routines").param("authorId", publicIdOf(me)))
         .andExpect(status().isOk())
@@ -419,8 +419,8 @@ class RoutineListApiTests extends ApiTestSupport {
   @Test
   @DisplayName("다른 정렬에서 받은 커서 → 400 ROUTINE4001")
   void cursorFromOtherSort() throws Exception {
-    createRoutine(DEMO_TOKEN);
-    createRoutine(DEMO_TOKEN);
+    createRoutine(DEMO_USER_ID);
+    createRoutine(DEMO_USER_ID);
     String likesCursor = JsonPath.read(page("?sort=likes&size=1"), "$.result.nextCursor");
     mvc.perform(get("/api/routines").param("sort", "latest").param("cursor", likesCursor))
         .andExpect(status().isBadRequest())
@@ -432,8 +432,8 @@ class RoutineListApiTests extends ApiTestSupport {
   @Test
   @DisplayName("커서에 내부 PK가 들어가지 않는다 (publicId만)")
   void cursorHasNoInternalId() throws Exception {
-    createRoutine(DEMO_TOKEN);
-    createRoutine(DEMO_TOKEN);
+    createRoutine(DEMO_USER_ID);
+    createRoutine(DEMO_USER_ID);
     String json = page("?size=1");
     String cursor = JsonPath.read(json, "$.result.nextCursor");
     String lastId = JsonPath.read(json, "$.result.routines[0].routineId");

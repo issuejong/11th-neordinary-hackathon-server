@@ -18,7 +18,7 @@ class RoutineInteractionApiTests extends ApiTestSupport {
 
   @Test
   void returnsActiveCountsAndViewerState() throws Exception {
-    String routineId = createRoutine(DEMO_TOKEN);
+    String routineId = createRoutine(DEMO_USER_ID);
     String viewer = newUser();
     String completed = newUser();
     String canceled = newUser();
@@ -46,33 +46,33 @@ class RoutineInteractionApiTests extends ApiTestSupport {
     });
 
     String path = "/api/routines/" + routineId + "/interactions";
-    mvc.perform(get(path).header(LoginUser.HEADER, viewer))
+    mvc.perform(get(path).header(LoginUser.HEADER, authorization(viewer)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.result.likeCount").value(1))
         .andExpect(jsonPath("$.result.likedByMe").value(true))
         .andExpect(jsonPath("$.result.inProgressCount").value(1))
         .andExpect(jsonPath("$.result.completedCount").value(1))
         .andExpect(jsonPath("$.result.myParticipationStatus").value("IN_PROGRESS"));
-    mvc.perform(get(path).header(LoginUser.HEADER, completed))
+    mvc.perform(get(path).header(LoginUser.HEADER, authorization(completed)))
         .andExpect(jsonPath("$.result.myParticipationStatus").value("COMPLETED"));
-    mvc.perform(get(path).header(LoginUser.HEADER, canceled))
+    mvc.perform(get(path).header(LoginUser.HEADER, authorization(canceled)))
         .andExpect(jsonPath("$.result.likedByMe").value(false))
         .andExpect(jsonPath("$.result.myParticipationStatus").value("NOT_PARTICIPATING"));
   }
 
   @Test
-  void validatesRoutineIdAndRequiresDeviceToken() throws Exception {
+  void validatesRoutineIdAndRequiresSession() throws Exception {
     mvc.perform(get("/api/routines/" + DemoData.ROUTINE_ID + "/interactions"))
+        .andExpect(status().isUnauthorized());
+    mvc.perform(get("/api/routines/invalid/interactions").header(LoginUser.HEADER, authorization(DEMO_USER_ID)))
         .andExpect(status().isBadRequest());
-    mvc.perform(get("/api/routines/invalid/interactions").header(LoginUser.HEADER, DEMO_TOKEN))
-        .andExpect(status().isBadRequest());
-    mvc.perform(get("/api/routines/" + UNKNOWN_ID + "/interactions").header(LoginUser.HEADER, DEMO_TOKEN))
+    mvc.perform(get("/api/routines/" + UNKNOWN_ID + "/interactions").header(LoginUser.HEADER, authorization(DEMO_USER_ID)))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.code").value("ROUTINE404"));
   }
 
   private User user(String token) {
-    return entityManager.createQuery("from AppUser u where u.deviceToken = :token", User.class)
+    return entityManager.createQuery("from AppUser u where u.publicId = :token", User.class)
         .setParameter("token", token).getSingleResult();
   }
 }

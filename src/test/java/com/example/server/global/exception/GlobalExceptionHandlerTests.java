@@ -1,5 +1,6 @@
 package com.example.server.global.exception;
 
+import com.example.server.support.TestSessions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -30,8 +31,11 @@ import org.springframework.web.multipart.MultipartFile;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(GlobalExceptionHandlerTests.TestControllerConfig.class)
+@Import({GlobalExceptionHandlerTests.TestControllerConfig.class, TestSessions.class})
 class GlobalExceptionHandlerTests {
+
+  @Autowired
+  private TestSessions sessions;
 
   @Autowired
   private MockMvc mvc;
@@ -58,7 +62,7 @@ class GlobalExceptionHandlerTests {
 
   @Test
   void malformedJsonReturns400() throws Exception {
-    mvc.perform(post("/api/routines").header("X-Device-Token", "demo-device-token")
+    mvc.perform(post("/api/routines").header("Authorization", sessions.authorization("01KB0000000000000000MEM001"))
             .contentType(MediaType.APPLICATION_JSON).content("{"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("COMMON400"));

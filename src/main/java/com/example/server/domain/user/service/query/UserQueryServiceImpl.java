@@ -4,7 +4,6 @@ import com.example.server.domain.user.dto.UserResponseDTO;
 import com.example.server.domain.user.repository.UserRepository;
 import com.example.server.global.exception.BusinessException;
 import com.example.server.global.response.code.status.ErrorStatus;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,11 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserQueryServiceImpl implements UserQueryService {
 
   private final UserRepository userRepository;
-
-  @Override
-  public List<UserResponseDTO> findByDeviceToken(String deviceToken) {
-    return userRepository.findActiveProfilesByDeviceToken(deviceToken);
-  }
 
   @Override
   public UserResponseDTO findMe(Long userId) {

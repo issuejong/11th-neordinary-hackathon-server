@@ -42,7 +42,7 @@ class UserProfileApiTests extends ApiTestSupport {
         {"bio":null}
         """).andExpect(status().isOk());
 
-    mvc.perform(get("/api/users/me").header(LoginUser.HEADER, token))
+    mvc.perform(get("/api/users/me").header(LoginUser.HEADER, authorization(token)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.result.nickname").value("저녁산책"))
         .andExpect(jsonPath("$.result.bio").value(Matchers.nullValue()))
@@ -80,14 +80,14 @@ class UserProfileApiTests extends ApiTestSupport {
   }
 
   private ResultActions update(String token, String json) throws Exception {
-    return mvc.perform(patch("/api/users/me").header(LoginUser.HEADER, token)
+    return mvc.perform(patch("/api/users/me").header(LoginUser.HEADER, authorization(token))
         .contentType(MediaType.APPLICATION_JSON).content(json));
   }
 
   private ResultActions uploadProfile(String token, byte[] data) throws Exception {
     return mvc.perform(multipart("/api/images/profile")
         .file(new MockMultipartFile("file", "profile.png", "image/png", data))
-        .header(LoginUser.HEADER, token));
+        .header(LoginUser.HEADER, authorization(token)));
   }
 
   private String imageId(ResultActions upload) throws Exception {

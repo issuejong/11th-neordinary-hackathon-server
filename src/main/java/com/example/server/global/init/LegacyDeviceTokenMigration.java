@@ -10,36 +10,35 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
-/** 기존 MySQL DB의 토큰 고유 인덱스를 제거한다. 일반 인덱스는 JPA 스키마 갱신이 생성한다. */
+/** 기존 MySQL에서 새 사용자를 만들 때 과거 기기 토큰 컬럼을 생략할 수 있게 한다. */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @ConditionalOnProperty(name = "spring.datasource.driver-class-name", havingValue = "com.mysql.cj.jdbc.Driver")
 @RequiredArgsConstructor
-public class DeviceTokenIndexMigration implements ApplicationRunner {
+public class LegacyDeviceTokenMigration implements ApplicationRunner {
 
   private final JdbcTemplate jdbcTemplate;
 
   @Override
   public void run(ApplicationArguments args) {
-    if (!hasLegacyUniqueIndex()) {
+    if (!requiresLegacyToken()) {
       return;
     }
     try {
-      jdbcTemplate.execute("ALTER TABLE users DROP INDEX uk_users_device_token");
+      jdbcTemplate.execute("ALTER TABLE users MODIFY COLUMN device_token VARCHAR(255) NULL");
     } catch (DataAccessException exception) {
-      // 다른 인스턴스가 먼저 제거한 경우에는 마이그레이션이 끝난 상태다.
-      if (hasLegacyUniqueIndex()) {
+      if (requiresLegacyToken()) {
         throw exception;
       }
     }
   }
 
-  private boolean hasLegacyUniqueIndex() {
+  private boolean requiresLegacyToken() {
     return Boolean.TRUE.equals(jdbcTemplate.queryForObject("""
         SELECT EXISTS (
-          SELECT 1 FROM information_schema.statistics
+          SELECT 1 FROM information_schema.columns
           WHERE table_schema = DATABASE() AND table_name = 'users'
-            AND index_name = 'uk_users_device_token' AND non_unique = 0
+            AND column_name = 'device_token' AND is_nullable = 'NO'
         )
         """, Boolean.class));
   }

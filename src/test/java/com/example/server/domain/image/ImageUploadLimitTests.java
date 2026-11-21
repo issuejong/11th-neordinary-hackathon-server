@@ -1,5 +1,8 @@
 package com.example.server.domain.image;
 
+import com.example.server.support.TestSessions;
+import org.springframework.context.annotation.Import;
+import org.springframework.beans.factory.annotation.Autowired;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.example.server.global.auth.LoginUser;
@@ -21,9 +24,13 @@ import org.springframework.test.context.ActiveProfiles;
  * MockMvc는 multipart 크기 제한을 적용하지 않으므로, 실제 Tomcat을 띄워 HTTP로 검증한다.
  * (application.yml: 파일 10MB / 요청 20MB, max-swallow-size 32MB)
  */
+@Import(TestSessions.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 class ImageUploadLimitTests {
+
+  @Autowired
+  private TestSessions sessions;
 
   private static final int MB = 1024 * 1024;
 
@@ -41,7 +48,7 @@ class ImageUploadLimitTests {
 
     HttpRequest request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/api/images"))
         .header("Content-Type", "multipart/form-data; boundary=" + boundary)
-        .header(LoginUser.HEADER, DemoData.USER_DEVICE_TOKEN)
+        .header(LoginUser.HEADER, sessions.authorization(DemoData.USER_ID))
         .POST(HttpRequest.BodyPublishers.ofByteArray(body.toByteArray()))
         .build();
     return HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
