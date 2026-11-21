@@ -50,6 +50,38 @@ com.example.server
 - **이미지**: 오브젝트 스토리지 없이 DB `images.data`(MEDIUMBLOB, 최대 16MB)에 저장합니다. 업로드 한도는 파일 10MB, 요청 20MB입니다(`application.yml`). 목록 조회에서는 바이너리를 빼고 내려줍니다.
 - **트랜잭션**: command 서비스에는 `@Transactional`, query 서비스에는 `@Transactional(readOnly = true)`를 붙입니다. `open-in-view`는 꺼져 있습니다.
 
+## 심사 기준 (모든 작업은 이 기준을 통과해야 합니다)
+심사자는 배포 URL(https://neo8.duckdns.org)의 Swagger에서 직접 API를 호출해서 채점합니다. **500 응답이 한 번이라도 나오면 감점**입니다.
+
+**API 정상 동작 (35점)**
+- 명세(Swagger)에 노출된 API는 전부 운영 서버에서 실제로 동작해야 합니다. 미완성 API는 Swagger에 노출하지 마세요.
+- Swagger에서 바로 실행할 수 있도록 예시를 채웁니다.
+  - 요청 DTO의 모든 필드에 `@Schema(description = "...", example = "...")`를 붙입니다.
+  - 경로 변수와 쿼리 파라미터에는 `@Parameter(example = "...")`를 붙입니다.
+  - 컨트롤러에는 `@Tag`, 메서드에는 `@Operation(summary = "...")`을 붙입니다.
+- `publicId` 예시는 운영 DB에 실제로 있는 값을 쓰거나, 시드 데이터로 넣어서 바로 호출해도 성공하게 만듭니다.
+
+**API 예외처리 (20점)**: 심사자가 쿼리 스트링과 요청 본문에 잘못된 값을 넣어 봅니다.
+- 모든 예외는 `GlobalExceptionHandler`(`@RestControllerAdvice`)가 `ApiResponse.onFailure` 형식으로 응답합니다. 컨트롤러에서 try-catch로 직접 응답을 만들지 마세요.
+- 상태 코드를 정확히 맞춥니다.
+
+  | 상태 | 상황 |
+  | --- | --- |
+  | 200 | 조회 · 수정 · 삭제 성공 |
+  | 201 | 생성 성공 (`ResponseEntity.created`) |
+  | 400 | 검증 실패, 타입 불일치, 필수 파라미터 누락, JSON 파싱 실패, 파일 크기 초과 |
+  | 404 | 없는 리소스 (`publicId` 조회 실패 포함) → `BusinessException(ErrorStatus.XXX_NOT_FOUND)` |
+  | 500 | 예상하지 못한 예외만 (catch-all 핸들러). 스택 트레이스나 내부 메시지는 응답에 넣지 않습니다. |
+
+- 입력 검증은 요청 DTO에 Bean Validation(`@NotBlank`, `@Size`, `@Min`, `@Pattern` 등)과 `@Valid`로 합니다. 쿼리 파라미터 검증이 필요하면 컨트롤러에 제약 어노테이션을 붙입니다.
+- `Optional.get()`, `orElseThrow()`(인자 없음), null 역참조처럼 500이 날 수 있는 코드를 쓰지 마세요. 항상 `orElseThrow(() -> new BusinessException(...))`를 씁니다.
+- 새 API를 만들면 정상 요청, 잘못된 본문(400), 없는 ID(404)를 테스트(MockMvc)로 확인합니다.
+
+**코드 품질 (15점)**
+- 관심사 분리: controller는 요청과 응답만, 비즈니스 로직은 service, 변환은 converter, DB 접근은 repository가 맡습니다. 컨트롤러에서 repository를 직접 호출하지 마세요. 엔티티를 응답으로 그대로 반환하지도 마세요(DTO로 변환).
+- 중복 제거: 공통 로직은 `global/`에 둡니다. 응답 형식, 예외, 감사 필드(Base 엔티티)를 재사용하고 같은 코드를 복사해 붙이지 않습니다.
+- 설정 외부화: URL, 비밀번호, 한도값 같은 환경별 값은 하드코딩하지 않고 `application.yml`과 환경변수(`${...}`)로 뺍니다.
+
 ## 설정 · 프로필 (`src/main/resources/application.yml`)
 - `dev`(기본값): 로컬 MySQL, `ddl-auto: update`, SQL 로그 출력
 - `prod`: Cloud Run에서 `SPRING_PROFILES_ACTIVE=prod`. `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`는 GCP Secret Manager에서 주입됩니다. `ddl-auto: update`라서 **배포하는 순간 운영 DB 스키마가 바뀝니다.** 컬럼 삭제나 타입 변경은 자동으로 반영되지 않습니다.
