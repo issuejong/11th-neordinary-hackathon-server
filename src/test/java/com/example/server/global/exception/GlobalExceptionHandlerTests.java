@@ -58,7 +58,8 @@ class GlobalExceptionHandlerTests {
 
   @Test
   void malformedJsonReturns400() throws Exception {
-    mvc.perform(post("/api/examples").contentType(MediaType.APPLICATION_JSON).content("{"))
+    mvc.perform(post("/api/routines").header("X-Device-Token", "demo-device-token")
+            .contentType(MediaType.APPLICATION_JSON).content("{"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("COMMON400"));
   }
@@ -86,6 +87,14 @@ class GlobalExceptionHandlerTests {
     mvc.perform(delete("/health"))
         .andExpect(status().isMethodNotAllowed())
         .andExpect(jsonPath("$.code").value("COMMON405"));
+  }
+
+  @Test
+  void unsupportedAcceptHeaderReturns406WithoutErrorLog() throws Exception {
+    mvc.perform(get("/api/routines").accept(MediaType.TEXT_PLAIN))
+        .andExpect(status().isNotAcceptable());
+    mvc.perform(get("/api/routines").accept(MediaType.APPLICATION_XML))
+        .andExpect(status().isNotAcceptable());
   }
 
   @Test

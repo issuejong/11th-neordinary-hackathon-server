@@ -51,10 +51,25 @@ class SwaggerExamplesTests extends ApiTestSupport {
   }
 
   @Test
+  @DisplayName("스키마 이름이 겹쳐서 요청 · 응답 모양이 섞이지 않는다")
+  void schemaNamesDoNotCollide() throws Exception {
+    String docs = apiDocs();
+    Map<String, Object> requestCard = JsonPath.read(docs, "$.components.schemas.RoutineCardRequest.properties");
+    Map<String, Object> responseCard = JsonPath.read(docs, "$.components.schemas.RoutineCardResponse.properties");
+    assertThat(requestCard).containsKeys("imageId", "title", "content", "time").doesNotContainKeys("cardId", "order", "imageUrl");
+    assertThat(responseCard).containsKeys("cardId", "order", "imageUrl");
+    Map<String, Object> detailCards = JsonPath.read(docs, "$.components.schemas.RoutineDetailResponse.properties.cards.items");
+    assertThat(detailCards.get("$ref")).isEqualTo("#/components/schemas/RoutineCardResponse");
+    // 모든 요청 본문 스키마가 서로 다른 이름을 가진다
+    List<String> requestRefs = JsonPath.read(docs, "$.paths.*.*.requestBody.content['application/json'].schema['$ref']");
+    assertThat(requestRefs).contains("#/components/schemas/RoutineSaveRequest");
+  }
+
+  @Test
   @DisplayName("요청 DTO의 모든 필드에 예시값이 있다")
   void requestSchemasHaveExamples() throws Exception {
     String docs = apiDocs();
-    for (String schema : List.of("Save", "Card")) {
+    for (String schema : List.of("RoutineSaveRequest", "RoutineCardRequest")) {
       Map<String, Map<String, Object>> props = JsonPath.read(docs, "$.components.schemas." + schema + ".properties");
       props.forEach((name, prop) -> {
         if (!"array".equals(prop.get("type"))) {
@@ -78,12 +93,12 @@ class SwaggerExamplesTests extends ApiTestSupport {
     mvc.perform(get("/api/images/" + imageExample)).andExpect(status().isOk());
 
     // Swagger가 Card 예시값으로 만들어 주는 본문 그대로 수정 호출
-    String cardImage = JsonPath.read(docs, "$.components.schemas.Card.properties.imageId.example");
-    String cardTitle = JsonPath.read(docs, "$.components.schemas.Card.properties.title.example");
-    String cardContent = JsonPath.read(docs, "$.components.schemas.Card.properties.content.example");
-    String cardTime = JsonPath.read(docs, "$.components.schemas.Card.properties.time.example");
-    String title = JsonPath.read(docs, "$.components.schemas.Save.properties.title.example");
-    String content = JsonPath.read(docs, "$.components.schemas.Save.properties.content.example");
+    String cardImage = JsonPath.read(docs, "$.components.schemas.RoutineCardRequest.properties.imageId.example");
+    String cardTitle = JsonPath.read(docs, "$.components.schemas.RoutineCardRequest.properties.title.example");
+    String cardContent = JsonPath.read(docs, "$.components.schemas.RoutineCardRequest.properties.content.example");
+    String cardTime = JsonPath.read(docs, "$.components.schemas.RoutineCardRequest.properties.time.example");
+    String title = JsonPath.read(docs, "$.components.schemas.RoutineSaveRequest.properties.title.example");
+    String content = JsonPath.read(docs, "$.components.schemas.RoutineSaveRequest.properties.content.example");
     String body = routineJson(title, content, card(cardImage, cardTitle, cardContent, cardTime));
 
     mvc.perform(MockMvcRequestBuilders.put("/api/routines/" + editableExample)

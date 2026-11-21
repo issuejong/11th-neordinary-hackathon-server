@@ -16,6 +16,9 @@ public interface RoutineRepository extends JpaRepository<Routine, Long> {
 
   boolean existsByPublicId(String publicId);
 
+  /** 삭제 여부와 무관하게 조회 (데모 데이터 복구용) */
+  Optional<Routine> findByPublicId(String publicId);
+
   /** 루틴 + 작성자 정보 (이미지 바이너리는 읽지 않음) */
   @Query("""
       select new com.example.server.domain.routine.repository.projection.RoutineHeaderView(

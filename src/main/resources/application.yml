@@ -11,6 +11,12 @@ spring:
       max-file-size: 10MB
       max-request-size: 20MB
 
+# 애플리케이션 정책 (환경변수로 덮어쓰기 가능: APP_IMAGE_MAX_DIMENSION 등)
+app:
+  image:
+    max-dimension: 8192   # 가로 · 세로 최대 픽셀 (아이폰 48MP 원본 8064x6048 허용)
+    cache-max-age: 30d    # 이미지 조회 Cache-Control (이미지는 수정되지 않으므로 길게)
+
 server:
   port: ${PORT:8080}
   # Cloud Run 앞단 프록시의 X-Forwarded-* 헤더를 신뢰 (Swagger 등에서 https URL 생성)

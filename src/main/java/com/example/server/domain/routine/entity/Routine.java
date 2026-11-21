@@ -60,4 +60,9 @@ public class Routine extends SoftDeletableEntity {
   public boolean isOwnedBy(Long userId) {
     return user.getId().equals(userId);
   }
+
+  /** 소프트 삭제 취소 (Swagger 데모 데이터 자동 복구용) */
+  public void restoreDeleted(Long actorId) {
+    restore(actorId);
+  }
 }

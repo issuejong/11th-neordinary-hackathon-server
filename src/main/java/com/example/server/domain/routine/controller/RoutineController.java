@@ -37,8 +37,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class RoutineController {
 
-  private static final String ID_MESSAGE = "올바른 ID 형식(ULID 26자)이 아닙니다.";
-
   private final RoutineCommandService commandService;
   private final RoutineQueryService queryService;
 
@@ -83,7 +81,7 @@ public class RoutineController {
   @GetMapping("/{routineId}")
   public ApiResponse<RoutineResponseDTO.Detail> find(
       @Parameter(description = "루틴 publicId", example = DemoData.ROUTINE_ID)
-      @PathVariable @Pattern(regexp = Ulid.REGEX, message = ID_MESSAGE) String routineId
+      @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String routineId
   ) {
     return ApiResponse.onSuccess(queryService.getDetail(routineId));
   }
@@ -92,8 +90,8 @@ public class RoutineController {
   @PutMapping("/{routineId}")
   public ApiResponse<RoutineResponseDTO.Detail> update(
       @LoginUser Long userId,
-      @Parameter(description = "루틴 publicId (데모 사용자의 수정·삭제용 루틴)", example = DemoData.EDITABLE_ROUTINE_ID)
-      @PathVariable @Pattern(regexp = Ulid.REGEX, message = ID_MESSAGE) String routineId,
+      @Parameter(description = "루틴 publicId (데모 사용자의 수정용 루틴)", example = DemoData.EDITABLE_ROUTINE_ID)
+      @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String routineId,
       @Valid @RequestBody RoutineRequestDTO.Save request
   ) {
     return ApiResponse.onSuccess(commandService.update(userId, routineId, request));
@@ -103,8 +101,8 @@ public class RoutineController {
   @DeleteMapping("/{routineId}")
   public ApiResponse<Void> delete(
       @LoginUser Long userId,
-      @Parameter(description = "루틴 publicId (데모 사용자의 수정·삭제용 루틴)", example = DemoData.EDITABLE_ROUTINE_ID)
-      @PathVariable @Pattern(regexp = Ulid.REGEX, message = ID_MESSAGE) String routineId
+      @Parameter(description = "루틴 publicId (데모 사용자의 삭제용 루틴, 1분 안에 자동 복구)", example = DemoData.DELETABLE_ROUTINE_ID)
+      @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String routineId
   ) {
     commandService.delete(userId, routineId);
     return ApiResponse.onSuccess(null);

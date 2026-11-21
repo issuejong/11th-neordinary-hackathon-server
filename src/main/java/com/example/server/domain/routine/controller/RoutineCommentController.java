@@ -41,7 +41,7 @@ public class RoutineCommentController {
   public ApiResponse<List<RoutineCommentResponseDTO>> findAll(
       @LoginUser Long userId,
       @Parameter(description = "루틴 publicId", example = DemoData.ROUTINE_ID)
-      @PathVariable @Pattern(regexp = Ulid.REGEX) String routineId
+      @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String routineId
   ) {
     return ApiResponse.onSuccess(queryService.findAll(userId, routineId));
   }
@@ -51,7 +51,7 @@ public class RoutineCommentController {
   public ResponseEntity<ApiResponse<RoutineCommentResponseDTO>> create(
       @LoginUser Long userId,
       @Parameter(description = "루틴 publicId", example = DemoData.ROUTINE_ID)
-      @PathVariable @Pattern(regexp = Ulid.REGEX) String routineId,
+      @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String routineId,
       @Valid @RequestBody CommentBody request
   ) {
     RoutineCommentResponseDTO result = commandService.create(userId, routineId, request);
@@ -64,9 +64,9 @@ public class RoutineCommentController {
   public ApiResponse<RoutineCommentResponseDTO> update(
       @LoginUser Long userId,
       @Parameter(description = "루틴 publicId", example = DemoData.ROUTINE_ID)
-      @PathVariable @Pattern(regexp = Ulid.REGEX) String routineId,
+      @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String routineId,
       @Parameter(description = "댓글 publicId", example = DemoData.COMMENT_ID)
-      @PathVariable @Pattern(regexp = Ulid.REGEX) String commentId,
+      @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String commentId,
       @Valid @RequestBody CommentBody request
   ) {
     return ApiResponse.onSuccess(commandService.update(userId, routineId, commentId, request));
@@ -77,9 +77,9 @@ public class RoutineCommentController {
   public ApiResponse<Void> delete(
       @LoginUser Long userId,
       @Parameter(description = "루틴 publicId", example = DemoData.ROUTINE_ID)
-      @PathVariable @Pattern(regexp = Ulid.REGEX) String routineId,
-      @Parameter(description = "댓글 publicId", example = DemoData.COMMENT_ID)
-      @PathVariable @Pattern(regexp = Ulid.REGEX) String commentId
+      @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String routineId,
+      @Parameter(description = "댓글 publicId", example = DemoData.DELETABLE_COMMENT_ID)
+      @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String commentId
   ) {
     commandService.delete(userId, routineId, commentId);
     return ApiResponse.onSuccess(null);
