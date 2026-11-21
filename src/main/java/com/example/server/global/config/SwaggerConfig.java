@@ -124,13 +124,14 @@ public class SwaggerConfig {
           .findFirst()
           .orElse(null);
       if (loginUser != null) {
+        String exampleToken = loginUser.example().isEmpty() ? DemoData.USER_DEVICE_TOKEN : loginUser.example();
         operation.addParametersItem(new HeaderParameter()
             .name(LoginUser.HEADER)
             .required(loginUser.required())
             .description(loginUser.required()
-                ? "요청한 사용자의 기기 토큰 (임시 인증). 데모 사용자: " + DemoData.USER_DEVICE_TOKEN
+                ? "요청한 사용자의 기기 토큰 (임시 인증). 데모 사용자: " + exampleToken
                 : "선택 헤더. 생략하면 사용자별 상태를 표시하지 않습니다.")
-            .example(DemoData.USER_DEVICE_TOKEN)
+            .example(exampleToken)
             .schema(new StringSchema()));
       }
       markCreated(operation, handlerMethod);
@@ -164,12 +165,16 @@ public class SwaggerConfig {
         : domain.contains("Routine") ? "ROUTINE404" : domain.contains("Image") ? "IMAGE404" : "USER404";
     boolean updatesProfile = domain.equals("UserController")
         && handlerMethod.hasMethodAnnotation(org.springframework.web.bind.annotation.PatchMapping.class);
+    boolean changesParticipation = domain.equals("RoutineParticipationController");
 
     Map<String, ApiResponse> errors = new LinkedHashMap<>();
     errors.put("400", error("입력값 오류 (COMMON400 등) — result에 필드별 메시지"
         + (requiresToken ? " / X-Device-Token 헤더 누락" : ""), "COMMON400", "요청 형식이 올바르지 않습니다.",
         Map.of("필드명", "오류 메시지")));
-    if (mutatesOwned) {
+    if (changesParticipation) {
+      ErrorStatus forbidden = ErrorStatus.PARTICIPATION_OWNER_FORBIDDEN;
+      errors.put("403", error(forbidden.getMessage(), forbidden.getCode(), forbidden.getMessage(), null));
+    } else if (mutatesOwned) {
       errors.put("403", domain.contains("Comment")
           ? error("댓글 작성자가 아님", "COMMENT403", "댓글 작성자만 수정하거나 삭제할 수 있습니다.", null)
           : error("루틴 작성자가 아님", "ROUTINE403", "루틴 작성자만 수정하거나 삭제할 수 있습니다.", null));
@@ -179,6 +184,10 @@ public class SwaggerConfig {
     }
     if (updatesProfile) {
       errors.put("409", error("중복된 닉네임", "USER4091", ErrorStatus.USER_DUPLICATE_NICKNAME.getMessage(), null));
+    }
+    if (changesParticipation && !handlerMethod.getMethod().getName().equals("join")) {
+      ErrorStatus invalidState = ErrorStatus.PARTICIPATION_INVALID_STATE;
+      errors.put("409", error(invalidState.getMessage(), invalidState.getCode(), invalidState.getMessage(), null));
     }
     if (loginUser != null || hasPathVariable) {
       errors.put("404", error("대상 없음 (" + notFoundCode + (updatesProfile ? " · 이미지 없음 IMAGE404" : "")

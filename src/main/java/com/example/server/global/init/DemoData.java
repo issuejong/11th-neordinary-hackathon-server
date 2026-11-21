@@ -14,6 +14,8 @@ public final class DemoData {
   /** 데모 사용자 (USER_DEVICE_TOKEN이 임시 인증 X-Device-Token 예시값) */
   public static final String USER_ID = "01KB0000000000000000MEM001";
   public static final String USER_DEVICE_TOKEN = "demo-device-token";
+  public static final String PARTICIPANT_ID = "01KB0000000000000000MEM002";
+  public static final String PARTICIPANT_DEVICE_TOKEN = "demo-participant-token";
 
   /** 상세 조회 예시용 루틴 */
   public static final String ROUTINE_ID = "01KB0000000000000000RTN001";

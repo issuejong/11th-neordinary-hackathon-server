@@ -40,7 +40,11 @@ public enum ErrorStatus implements BaseCode {
 
   // 댓글
   COMMENT_FORBIDDEN(HttpStatus.FORBIDDEN, "COMMENT403", "댓글 작성자만 수정하거나 삭제할 수 있습니다."),
-  COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "COMMENT404", "댓글을 찾을 수 없습니다.");
+  COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "COMMENT404", "댓글을 찾을 수 없습니다."),
+
+  // 참여
+  PARTICIPATION_OWNER_FORBIDDEN(HttpStatus.FORBIDDEN, "PARTICIPATION403", "내가 만든 루틴에는 참여할 수 없습니다."),
+  PARTICIPATION_INVALID_STATE(HttpStatus.CONFLICT, "PARTICIPATION409", "현재 참여 상태에서는 이 동작을 할 수 없습니다.");
 
   private final HttpStatus httpStatus;
   private final String code;

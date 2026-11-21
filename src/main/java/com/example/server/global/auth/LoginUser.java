@@ -19,4 +19,7 @@ public @interface LoginUser {
 
   /** false이면 헤더를 생략한 공개 조회에서 사용자 ID가 null로 주입된다. */
   boolean required() default true;
+
+  /** Swagger 예시 토큰. 비어 있으면 기본 데모 사용자 토큰을 쓴다. */
+  String example() default "";
 }
