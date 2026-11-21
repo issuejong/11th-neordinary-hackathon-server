@@ -16,4 +16,7 @@ public @interface LoginUser {
 
   /** 임시 인증 헤더 이름 */
   String HEADER = "X-Device-Token";
+
+  /** false이면 헤더를 생략한 공개 조회에서 사용자 ID가 null로 주입된다. */
+  boolean required() default true;
 }
