@@ -53,6 +53,18 @@ public class ImageController {
         .body(ApiResponse.of(SuccessStatus._CREATED, result));
   }
 
+  @Operation(summary = "프로필 이미지 업로드",
+      description = "JPG, PNG, HEIC, HEIF 파일을 최대 5MB까지 올립니다. 응답의 imageId를 PATCH /api/users/me에 전달하세요.")
+  @PostMapping(path = "/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  public ResponseEntity<ApiResponse<ImageResponseDTO.Upload>> uploadProfile(
+      @LoginUser Long userId,
+      @Parameter(description = "업로드할 프로필 이미지 파일") @RequestPart("file") MultipartFile file
+  ) {
+    ImageResponseDTO.Upload result = commandService.uploadProfile(userId, file);
+    return ResponseEntity.created(URI.create(result.imageUrl()))
+        .body(ApiResponse.of(SuccessStatus._CREATED, result));
+  }
+
   @Operation(summary = "이미지 조회", description = "이미지 바이너리를 그대로 반환합니다. (img 태그 / AsyncImage에서 바로 사용)",
       responses = @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "이미지 파일",
           content = @io.swagger.v3.oas.annotations.media.Content(mediaType = "image/*",

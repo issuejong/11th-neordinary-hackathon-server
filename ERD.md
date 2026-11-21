@@ -27,8 +27,9 @@
 | `id` | `BIGINT` | NO | PK, AI | — | 내부 식별자(PK, 외부 노출 금지) |
 | `public_id` | `CHAR(26)` | NO | — | — | 외부 노출용 식별자(ULID) |
 | `device_token` | `VARCHAR(255)` | NO | — | — | 프론트가 전달하는 기기 개별 토큰(로그인 조회용, 참조 키로 사용 금지) |
-| `nickname` | `VARCHAR(30)` | NO | — | — | 닉네임(수정 가능한 값, 식별/참조 불가) |
-| `bio` | `VARCHAR(100)` | YES | — | — | 마이페이지 한 줄 소개. 생성 시 생략할 수 있습니다. |
+| `nickname` | `VARCHAR(30)` | NO | — | — | 표시 이름. 프로필에서 변경할 때 2~10자를 허용합니다. |
+| `nickname_key` | `VARCHAR(60)` | YES | — | — | 생성하거나 변경한 닉네임의 소문자 값입니다. 동시 요청의 중복을 방지합니다. 기존 데이터는 `NULL`을 유지하고 중복 검사에 `nickname`도 사용합니다. |
+| `bio` | `VARCHAR(100)` | YES | — | — | 마이페이지 한 줄 소개. 프로필 수정 시 최대 50자이며 `null`로 지울 수 있습니다. |
 | `profile_image_id` | `BIGINT` | NO | FK | — | 대표 이미지 images.id(가입 시 기본 이미지 중 랜덤 부여) |
 | `created_at` | `DATETIME(6)` | NO | — | `CURRENT_TIMESTAMP(6)` | 생성일시 |
 | `created_by` | `BIGINT` | YES | — | — | 생성 주체 user id(가입/시스템은 NULL) |
@@ -43,6 +44,7 @@
 | --- | --- | --- |
 | `uk_users_public_id` | `public_id` | UNIQUE |
 | `uk_users_device_token` | `device_token` | UNIQUE |
+| `uk_users_nickname_key` | `nickname_key` | UNIQUE |
 | `idx_users_profile_image` | `profile_image_id` | INDEX |
 | `pk_users` | `id` | PRIMARY KEY |
 
@@ -265,4 +267,5 @@
 - **Apple 로그인**에서 프론트가 넘기는 값이 `identityToken`이면 서버에서 토큰을 검증하고, `sub`를 고유한 `users.apple_sub`에 저장하는 흐름을 적용합니다. 위 표의 `device_token`은 붙여넣은 스키마 기준입니다.
 - **카드 10장 제한**은 API 검증(1~10개)과 DB의 `UNIQUE (routine_id, sort_order)` + `CHECK (sort_order BETWEEN 1 AND 10)`(`chk_cards_sort_order`)로 이중으로 보장합니다.
 - **이미지 업로드**는 API에서 형식(jpg, png, heic, heif, webp, gif, 파일 시그니처로 판별), 용량(파일 10MB, 요청 20MB), 해상도(가로 · 세로 최대 8192px)를 검증합니다. `content_type`에는 판별된 실제 형식이 저장됩니다. `MEDIUMBLOB`의 저장 한도는 16 MiB보다 1바이트 작습니다.
+- **프로필 이미지**는 업로드와 적용 시 JPG, PNG, HEIC, HEIF 형식과 최대 5MB를 확인합니다.
 - **시각 컬럼**은 모두 마이크로초 정밀도(`DATETIME(6)`)입니다.

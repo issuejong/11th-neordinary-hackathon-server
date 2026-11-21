@@ -82,7 +82,7 @@ class UserApiTests {
   void savesOptionalBioAndReturnsItInMyProfile() throws Exception {
     String token = UUID.randomUUID().toString();
     mvc.perform(create(token, """
-            {"nickname":"야행성","bio":"  매일 조금씩 운동해요.  "}
+            {"nickname":"소개테스트","bio":"  매일 조금씩 운동해요.  "}
             """))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.result.bio").value("매일 조금씩 운동해요."));
@@ -105,7 +105,7 @@ class UserApiTests {
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.result.bio").isString());
     mvc.perform(create(token, """
-            {"nickname":"야행성","bio":null}
+            {"nickname":"빈소개테스트","bio":null}
             """))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.result.bio").value(nullValue()));

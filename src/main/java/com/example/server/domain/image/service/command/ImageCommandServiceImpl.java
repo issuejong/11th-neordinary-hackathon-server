@@ -7,6 +7,7 @@ import com.example.server.domain.image.repository.ImageRepository;
 import com.example.server.domain.image.support.ImageInspector;
 import com.example.server.domain.image.support.ImageInspector.ImageInfo;
 import com.example.server.domain.image.support.ImageProperties;
+import com.example.server.domain.image.support.ProfileImagePolicy;
 import com.example.server.global.exception.BusinessException;
 import com.example.server.global.response.code.status.ErrorStatus;
 import com.example.server.global.util.Ulid;
@@ -29,16 +30,31 @@ public class ImageCommandServiceImpl implements ImageCommandService {
 
   private final ImageRepository imageRepository;
   private final ImageProperties imageProperties;
+  private final ProfileImagePolicy profileImagePolicy;
 
   @Override
   @Transactional
   public ImageResponseDTO.Upload upload(Long userId, MultipartFile file) {
+    return upload(userId, file, false);
+  }
+
+  @Override
+  @Transactional
+  public ImageResponseDTO.Upload uploadProfile(Long userId, MultipartFile file) {
+    profileImagePolicy.validateSize(file.getSize());
+    return upload(userId, file, true);
+  }
+
+  private ImageResponseDTO.Upload upload(Long userId, MultipartFile file, boolean profile) {
     if (file.isEmpty()) {
       throw new BusinessException(ErrorStatus.IMAGE_EMPTY);
     }
     byte[] data = readBytes(file);
     ImageInfo info = ImageInspector.inspect(data)
         .orElseThrow(() -> new BusinessException(ErrorStatus.IMAGE_UNSUPPORTED_TYPE));
+    if (profile) {
+      profileImagePolicy.validateType(info.contentType());
+    }
     int max = imageProperties.maxDimension();
     if (info.width() > max || info.height() > max) {
       throw new BusinessException(ErrorStatus.IMAGE_TOO_LARGE_DIMENSION);

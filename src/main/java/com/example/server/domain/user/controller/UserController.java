@@ -19,6 +19,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -59,5 +60,13 @@ public class UserController {
   @GetMapping("/me")
   public ApiResponse<UserResponseDTO> findMe(@LoginUser Long userId) {
     return ApiResponse.onSuccess(queryService.findMe(userId));
+  }
+
+  @Operation(summary = "내 프로필 수정",
+      description = "변경할 필드만 전달합니다. 한 줄 소개는 null로 지울 수 있습니다. 대표 이미지는 최대 5MB입니다.")
+  @PatchMapping("/me")
+  public ApiResponse<UserResponseDTO> updateMe(@LoginUser Long userId,
+      @Valid @RequestBody UserRequestDTO.UpdateProfile request) {
+    return ApiResponse.onSuccess(commandService.updateProfile(userId, request));
   }
 }

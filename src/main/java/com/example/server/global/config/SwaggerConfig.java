@@ -162,6 +162,8 @@ public class SwaggerConfig {
     String domain = handlerMethod.getBeanType().getSimpleName();
     String notFoundCode = domain.contains("Comment") ? "COMMENT404 · ROUTINE404"
         : domain.contains("Routine") ? "ROUTINE404" : domain.contains("Image") ? "IMAGE404" : "USER404";
+    boolean updatesProfile = domain.equals("UserController")
+        && handlerMethod.hasMethodAnnotation(org.springframework.web.bind.annotation.PatchMapping.class);
 
     Map<String, ApiResponse> errors = new LinkedHashMap<>();
     errors.put("400", error("입력값 오류 (COMMON400 등) — result에 필드별 메시지"
@@ -173,10 +175,14 @@ public class SwaggerConfig {
           : error("루틴 작성자가 아님", "ROUTINE403", "루틴 작성자만 수정하거나 삭제할 수 있습니다.", null));
     }
     if (domain.contains("User") && handlerMethod.hasMethodAnnotation(PostMapping.class)) {
-      errors.put("409", error("이미 가입된 기기 토큰", "COMMON409", "이미 처리된 요청이거나 데이터가 충돌합니다.", null));
+      errors.put("409", error("이미 가입된 기기 토큰 또는 중복된 닉네임", "COMMON409", "이미 처리된 요청이거나 데이터가 충돌합니다.", null));
+    }
+    if (updatesProfile) {
+      errors.put("409", error("중복된 닉네임", "USER4091", ErrorStatus.USER_DUPLICATE_NICKNAME.getMessage(), null));
     }
     if (loginUser != null || hasPathVariable) {
-      errors.put("404", error("대상 없음 (" + notFoundCode + (loginUser != null ? " · 모르는 토큰 USER404" : "") + ")",
+      errors.put("404", error("대상 없음 (" + notFoundCode + (updatesProfile ? " · 이미지 없음 IMAGE404" : "")
+              + (loginUser != null ? " · 모르는 토큰 USER404" : "") + ")",
           notFoundCode.split(" ")[0], "리소스를 찾을 수 없습니다.", null));
     }
     errors.put("500", error("서버 내부 오류", "COMMON500", "서버 내부 오류가 발생했습니다.", null));
