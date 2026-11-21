@@ -16,6 +16,9 @@ public interface RoutineCommentRepository extends JpaRepository<RoutineComment, 
 
   boolean existsByPublicId(String publicId);
 
+  /** 삭제 여부와 무관하게 조회 (데모 데이터 복구용) */
+  Optional<RoutineComment> findByPublicId(String publicId);
+
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   Optional<RoutineComment> findByRoutine_IdAndPublicIdAndDeletedAtIsNull(Long routineId, String publicId);
 

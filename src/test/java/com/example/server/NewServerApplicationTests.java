@@ -4,7 +4,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -12,7 +11,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -32,40 +30,28 @@ class NewServerApplicationTests {
   }
 
   @Test
-  void exampleCanBeCreatedAndRetrieved() throws Exception {
-    String location = mvc.perform(post("/api/examples")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content("""
-                {"name": "첫 번째 항목"}
-                """))
-        .andExpect(status().isCreated())
-        .andExpect(header().exists(HttpHeaders.LOCATION))
-        .andExpect(jsonPath("$.isSuccess").value(true))
-        .andExpect(jsonPath("$.code").value("COMMON201"))
-        .andExpect(jsonPath("$.result.id").isNumber())
-        .andReturn().getResponse().getHeader(HttpHeaders.LOCATION);
-
-    mvc.perform(get(location))
+  void successAndErrorResponsesUseTheCommonFormat() throws Exception {
+    mvc.perform(get("/api/routines/01KB0000000000000000RTN001"))
         .andExpect(status().isOk())
+        .andExpect(jsonPath("$.isSuccess").value(true))
         .andExpect(jsonPath("$.code").value("COMMON200"))
-        .andExpect(jsonPath("$.result.name").value("첫 번째 항목"));
-  }
+        .andExpect(jsonPath("$.message").isString())
+        .andExpect(jsonPath("$.result").exists());
 
-  @Test
-  void invalidAndMissingItemsUseTheCommonErrorFormat() throws Exception {
-    mvc.perform(post("/api/examples")
+    mvc.perform(post("/api/routines")
+            .header("X-Device-Token", "demo-device-token")
             .contentType(MediaType.APPLICATION_JSON)
             .content("""
-                {"name": ""}
+                {"title": ""}
                 """))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.isSuccess").value(false))
         .andExpect(jsonPath("$.code").value("COMMON400"))
-        .andExpect(jsonPath("$.result.name").isString());
+        .andExpect(jsonPath("$.result.title").isString());
 
-    mvc.perform(get("/api/examples/0"))
+    mvc.perform(get("/api/routines/01KB0000000000000000ZZZ999"))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.isSuccess").value(false))
-        .andExpect(jsonPath("$.code").value("COMMON404"));
+        .andExpect(jsonPath("$.code").value("ROUTINE404"));
   }
 }

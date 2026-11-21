@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 public class ImageResponseDTO {
 
-  @Schema(description = "이미지 업로드 결과")
+  @Schema(name = "ImageUploadResponse", description = "이미지 업로드 결과")
   public record Upload(
       @Schema(description = "이미지 publicId (루틴 카드 생성 시 imageId로 사용)", example = "01KB0000000000000000DEF001")
       String imageId,

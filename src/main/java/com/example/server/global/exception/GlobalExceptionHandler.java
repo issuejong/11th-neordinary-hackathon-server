@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.method.ParameterErrors;
+import org.springframework.web.HttpMediaTypeNotAcceptableException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -109,6 +110,12 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
   public ResponseEntity<ApiResponse<Void>> handleUnsupportedMediaType() {
     return failure(ErrorStatus._UNSUPPORTED_MEDIA_TYPE);
+  }
+
+  /** Accept 헤더로 요청한 형식(text/plain 등)을 만들 수 없을 때. 본문은 JSON으로도 못 쓰므로 상태 코드만 */
+  @ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
+  public ResponseEntity<Void> handleNotAcceptable() {
+    return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_ACCEPTABLE).build();
   }
 
   /** 유니크 키 충돌 등 (동시 요청으로 같은 기기 토큰이 두 번 가입되는 경우 등) */

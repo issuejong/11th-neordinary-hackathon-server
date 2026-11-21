@@ -21,8 +21,14 @@ public final class DemoData {
   /** Swagger 댓글 수정 · 삭제 예시 */
   public static final String COMMENT_ID = "01KB0000000000000000CMT001";
 
-  /** 수정 · 삭제 예시용 루틴 (데모 사용자 소유) */
+  /** 삭제 예시용 댓글 (수정 예시와 분리) */
+  public static final String DELETABLE_COMMENT_ID = "01KB0000000000000000CMT002";
+
+  /** 수정 예시용 루틴 (데모 사용자 소유) */
   public static final String EDITABLE_ROUTINE_ID = "01KB0000000000000000RTN002";
+
+  /** 삭제 예시용 루틴 (수정 예시와 분리: 삭제 후에도 수정 예시가 동작하도록) */
+  public static final String DELETABLE_ROUTINE_ID = "01KB0000000000000000RTN003";
 
   private DemoData() {
   }

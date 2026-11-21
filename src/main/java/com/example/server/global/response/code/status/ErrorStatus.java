@@ -26,7 +26,7 @@ public enum ErrorStatus implements BaseCode {
   // 이미지
   IMAGE_EMPTY(HttpStatus.BAD_REQUEST, "IMAGE4001", "빈 파일은 업로드할 수 없습니다."),
   IMAGE_UNSUPPORTED_TYPE(HttpStatus.BAD_REQUEST, "IMAGE4002", "지원하지 않는 이미지 형식이거나 손상된 파일입니다. (jpg, png, heic, heif, webp, gif)"),
-  IMAGE_TOO_LARGE_DIMENSION(HttpStatus.BAD_REQUEST, "IMAGE4003", "이미지 해상도가 너무 큽니다. (가로 · 세로 최대 8192px)"),
+  IMAGE_TOO_LARGE_DIMENSION(HttpStatus.BAD_REQUEST, "IMAGE4003", "이미지 해상도가 허용 범위(가로 · 세로 최대 픽셀)를 초과했습니다."),
   IMAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "IMAGE404", "이미지를 찾을 수 없습니다."),
 
   // 루틴

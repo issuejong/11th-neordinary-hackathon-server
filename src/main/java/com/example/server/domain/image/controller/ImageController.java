@@ -3,6 +3,7 @@ package com.example.server.domain.image.controller;
 import com.example.server.domain.image.dto.ImageResponseDTO;
 import com.example.server.domain.image.service.command.ImageCommandService;
 import com.example.server.domain.image.service.query.ImageQueryService;
+import com.example.server.domain.image.support.ImageProperties;
 import com.example.server.global.auth.LoginUser;
 import com.example.server.global.init.DemoData;
 import com.example.server.global.response.ApiResponse;
@@ -13,7 +14,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Pattern;
 import java.net.URI;
-import java.time.Duration;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
@@ -34,6 +34,7 @@ public class ImageController {
 
   private final ImageCommandService commandService;
   private final ImageQueryService queryService;
+  private final ImageProperties imageProperties;
 
   @Operation(summary = "이미지 업로드",
       description = """
@@ -56,12 +57,12 @@ public class ImageController {
   @GetMapping("/{imageId}")
   public ResponseEntity<byte[]> find(
       @Parameter(description = "이미지 publicId", example = DemoData.IMAGE_ID)
-      @PathVariable @Pattern(regexp = Ulid.REGEX, message = "올바른 ID 형식(ULID 26자)이 아닙니다.") String imageId
+      @PathVariable @Pattern(regexp = Ulid.REGEX, message = Ulid.MESSAGE) String imageId
   ) {
     ImageResponseDTO.File file = queryService.getFile(imageId);
     return ResponseEntity.ok()
         .contentType(MediaType.parseMediaType(file.contentType()))
-        .cacheControl(CacheControl.maxAge(Duration.ofDays(30)).cachePublic().immutable())
+        .cacheControl(CacheControl.maxAge(imageProperties.cacheMaxAge()).cachePublic().immutable())
         .header("X-Content-Type-Options", "nosniff")
         .body(file.data());
   }
