@@ -118,7 +118,7 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_ACCEPTABLE).build();
   }
 
-  /** 유니크 키 충돌 등 (동시 요청으로 같은 기기 토큰이 두 번 가입되는 경우 등) */
+  /** 유니크 키 충돌 등 DB 무결성 제약 위반 */
   @ExceptionHandler(DataIntegrityViolationException.class)
   public ResponseEntity<ApiResponse<Void>> handleConflict(DataIntegrityViolationException exception) {
     log.warn("Data integrity violation: {}", exception.getMostSpecificCause().getMessage());

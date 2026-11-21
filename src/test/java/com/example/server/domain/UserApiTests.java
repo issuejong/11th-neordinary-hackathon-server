@@ -4,6 +4,7 @@ import static org.hamcrest.Matchers.in;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -37,7 +38,7 @@ class UserApiTests {
   private MockMvc mvc;
 
   @Test
-  void createsOneUserPerTokenAndReturnsTheSameProfileInBothLookups() throws Exception {
+  void createsMultipleProfilesPerTokenAndResolvesOnlyTheSelectedUser() throws Exception {
     String token = UUID.randomUUID().toString();
     mvc.perform(get("/api/users").header(LoginUser.HEADER, token))
         .andExpect(status().isOk())
@@ -57,18 +58,6 @@ class UserApiTests {
     String userId = JsonPath.read(json, "$.result.publicId");
     String imageId = JsonPath.read(json, "$.result.profileImagePublicId");
 
-    mvc.perform(create(token, """
-            {"nickname":"두 번째 유저"}
-            """))
-        .andExpect(status().isConflict())
-        .andExpect(jsonPath("$.code").value("COMMON409"));
-
-    mvc.perform(get("/api/users").header(LoginUser.HEADER, token))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.result.length()").value(1))
-        .andExpect(jsonPath("$.result[0].publicId").value(userId))
-        .andExpect(jsonPath("$.result[0].deviceToken").doesNotHaveJsonPath());
-
     mvc.perform(get("/api/users/me").header(LoginUser.HEADER, token))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.result.publicId").value(userId))
@@ -76,13 +65,50 @@ class UserApiTests {
         .andExpect(jsonPath("$.result.bio").value(nullValue()))
         .andExpect(jsonPath("$.result.profileImagePublicId").value(imageId))
         .andExpect(jsonPath("$.result.deviceToken").doesNotHaveJsonPath());
+
+    String secondJson = mvc.perform(create(token, """
+            {"nickname":"두 번째 유저"}
+            """))
+        .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+    String secondId = JsonPath.read(secondJson, "$.result.publicId");
+
+    mvc.perform(create(token, NEW_USER)).andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("USER4091"));
+    mvc.perform(get("/api/users").header(LoginUser.HEADER, token))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.result.length()").value(2))
+        .andExpect(jsonPath("$.result[0].publicId").value(userId))
+        .andExpect(jsonPath("$.result[1].publicId").value(secondId))
+        .andExpect(jsonPath("$.result[0].deviceToken").doesNotHaveJsonPath());
+
+    mvc.perform(get("/api/users/me").header(LoginUser.HEADER, token))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("USER4002"));
+    mvc.perform(get("/api/users/me").header(LoginUser.HEADER, token).header(LoginUser.USER_ID_HEADER, "bad-id"))
+        .andExpect(status().isBadRequest());
+    mvc.perform(get("/api/users/me").header(LoginUser.HEADER, token).header(LoginUser.USER_ID_HEADER, DemoData.USER_ID))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.code").value("USER404"));
+
+    mvc.perform(patch("/api/users/me").header(LoginUser.HEADER, token).header(LoginUser.USER_ID_HEADER, secondId)
+            .contentType(MediaType.APPLICATION_JSON).content("""
+                {"bio":"두 번째 프로필입니다."}
+                """))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.result.publicId").value(secondId))
+        .andExpect(jsonPath("$.result.bio").value("두 번째 프로필입니다."));
+
+    mvc.perform(get("/api/users/me").header(LoginUser.HEADER, token).header(LoginUser.USER_ID_HEADER, userId))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.result.publicId").value(userId))
+        .andExpect(jsonPath("$.result.bio").value(nullValue()));
   }
 
   @Test
   void savesOptionalBioAndReturnsItInMyProfile() throws Exception {
     String token = UUID.randomUUID().toString();
     mvc.perform(create(token, """
-            {"nickname":"야행성","bio":"  매일 조금씩 운동해요.  "}
+            {"nickname":"소개테스트","bio":"  매일 조금씩 운동해요.  "}
             """))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.result.bio").value("매일 조금씩 운동해요."));
@@ -105,7 +131,7 @@ class UserApiTests {
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.result.bio").isString());
     mvc.perform(create(token, """
-            {"nickname":"야행성","bio":null}
+            {"nickname":"빈소개테스트","bio":null}
             """))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.result.bio").value(nullValue()));
