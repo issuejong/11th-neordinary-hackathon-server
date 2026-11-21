@@ -1,0 +1,26 @@
+# 로컬 개발용 MySQL (운영 Cloud SQL과 동일한 8.4)
+# 실행: docker compose up -d   /  종료: docker compose down   /  데이터 초기화: docker compose down -v
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: hackathon-mysql
+    ports:
+      - "127.0.0.1:3306:3306" # 로컬에서만 접근
+    environment:
+      MYSQL_DATABASE: hackathon
+      MYSQL_USER: hackathon
+      MYSQL_PASSWORD: hackathon
+      MYSQL_ROOT_PASSWORD: root
+      TZ: Asia/Seoul
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      interval: 5s
+      retries: 20
+
+volumes:
+  mysql-data:

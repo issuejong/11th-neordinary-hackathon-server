@@ -12,6 +12,25 @@ server:
   forward-headers-strategy: framework
 
 ---
+# 로컬 개발 프로필 (기본값): docker compose up -d 로 띄운 로컬 MySQL 사용
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/hackathon?serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
+    username: ${DB_USERNAME:hackathon}
+    password: ${DB_PASSWORD:hackathon}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+---
 # 운영(Cloud Run) 프로필: 모든 민감정보는 환경변수(Secret Manager)로 주입
 spring:
   config:
