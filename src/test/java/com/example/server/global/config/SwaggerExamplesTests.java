@@ -31,20 +31,16 @@ class SwaggerExamplesTests extends ApiTestSupport {
   }
 
   @Test
-  @DisplayName("작성자가 필요한 API에는 X-Device-Token 헤더(예시값 포함)가 문서화되고, 내부 userId 파라미터는 숨겨진다")
-  void loginHeaderDocumented() throws Exception {
+  void sessionSecurityIsDocumented() throws Exception {
     String docs = apiDocs();
+    Map<String, Object> scheme = JsonPath.read(docs, "$.components.securitySchemes.TestAccountSession");
+    assertThat(scheme).containsEntry("type", "http").containsEntry("scheme", "bearer");
     for (String[] op : new String[][] {
         {"/api/images", "post"}, {"/api/routines", "post"},
         {"/api/routines/{routineId}", "put"}, {"/api/routines/{routineId}", "delete"}}) {
-      List<Map<String, Object>> params = JsonPath.read(docs, "$.paths['" + op[0] + "']." + op[1] + ".parameters[*]");
-      assertThat(params).as(op[1] + " " + op[0])
-          .anySatisfy(p -> {
-            assertThat(p.get("name")).isEqualTo(LoginUser.HEADER);
-            assertThat(p.get("in")).isEqualTo("header");
-            assertThat(p.get("example")).isEqualTo(DemoData.USER_DEVICE_TOKEN);
-          })
-          .noneSatisfy(p -> assertThat(p.get("name")).isEqualTo("userId"));
+      Map<String, Object> operation = JsonPath.read(docs, "$.paths['" + op[0] + "']." + op[1]);
+      assertThat(operation.get("security")).isEqualTo(List.of(Map.of("TestAccountSession", List.of())));
+      assertThat(String.valueOf(operation.get("parameters"))).doesNotContain("name=userId");
     }
     List<Object> getParams = JsonPath.read(docs, "$.paths['/api/routines/{routineId}'].get.parameters[*].name");
     assertThat(getParams).containsExactly("routineId");
@@ -66,20 +62,13 @@ class SwaggerExamplesTests extends ApiTestSupport {
   }
 
   @Test
-  void commentListDeviceTokenIsOptionalButCommentCreationRequiresIt() throws Exception {
+  void commentListSessionIsOptionalButCreationRequiresIt() throws Exception {
     String docs = apiDocs();
     String path = "$.paths['/api/routines/{routineId}/comments']";
-    List<Map<String, Object>> listParams = JsonPath.read(docs, path + ".get.parameters[*]");
-    List<Map<String, Object>> createParams = JsonPath.read(docs, path + ".post.parameters[*]");
-
-    assertThat(listParams).anySatisfy(parameter -> {
-      assertThat(parameter.get("name")).isEqualTo(LoginUser.HEADER);
-      assertThat(parameter.get("required")).isNotEqualTo(true);
-    });
-    assertThat(createParams).anySatisfy(parameter -> {
-      assertThat(parameter.get("name")).isEqualTo(LoginUser.HEADER);
-      assertThat(parameter.get("required")).isEqualTo(true);
-    });
+    List<Map<String, Object>> list = JsonPath.read(docs, path + ".get.security");
+    List<Map<String, Object>> create = JsonPath.read(docs, path + ".post.security");
+    assertThat(list).containsExactlyInAnyOrder(Map.of(), Map.of("TestAccountSession", List.of()));
+    assertThat(create).containsExactly(Map.of("TestAccountSession", List.of()));
   }
 
   @Test
@@ -119,9 +108,9 @@ class SwaggerExamplesTests extends ApiTestSupport {
     String body = routineJson(title, content, card(cardImage, cardTitle, cardContent, cardTime));
 
     mvc.perform(MockMvcRequestBuilders.put("/api/routines/" + editableExample)
-            .header(LoginUser.HEADER, DemoData.USER_DEVICE_TOKEN)
+            .header(LoginUser.HEADER, authorization(DemoData.USER_ID))
             .contentType(MediaType.APPLICATION_JSON).content(body))
         .andExpect(status().isOk());
-    postRoutine(DemoData.USER_DEVICE_TOKEN, body).andExpect(status().isCreated());
+    postRoutine(DemoData.USER_ID, body).andExpect(status().isCreated());
   }
 }

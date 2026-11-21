@@ -18,8 +18,8 @@ class ImagePropertiesTests extends ApiTestSupport {
   @Test
   @DisplayName("app.image.max-dimension 설정이 업로드 검증에 반영된다")
   void maxDimensionFromConfig() throws Exception {
-    uploadImage(DEMO_TOKEN, "image/png", TestImages.png(100, 100)).andExpect(status().isCreated());
-    uploadImage(DEMO_TOKEN, "image/png", TestImages.png(101, 10))
+    uploadImage(DEMO_USER_ID, "image/png", TestImages.png(100, 100)).andExpect(status().isCreated());
+    uploadImage(DEMO_USER_ID, "image/png", TestImages.png(101, 10))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("IMAGE4003"));
   }

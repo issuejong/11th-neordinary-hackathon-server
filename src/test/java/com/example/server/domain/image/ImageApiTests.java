@@ -37,7 +37,7 @@ class ImageApiTests extends ApiTestSupport {
     @DisplayName("201 + Location + imageId · contentType · byteSize · width · height · imageUrl, DB에 바이너리 저장")
     void uploaded() throws Exception {
       byte[] png = TestImages.png(40, 30);
-      String json = uploadImage(DEMO_TOKEN, "image/png", png)
+      String json = uploadImage(DEMO_USER_ID, "image/png", png)
           .andExpect(status().isCreated())
           .andExpect(header().string(HttpHeaders.LOCATION, containsString("/api/images/")))
           .andExpect(jsonPath("$.isSuccess").value(true))
@@ -75,7 +75,7 @@ class ImageApiTests extends ApiTestSupport {
 
     private void expectUploaded(byte[] data, String type, int width, int height) throws Exception {
       // 클라이언트가 보낸 Content-Type과 무관하게 파일 내용으로 판별
-      uploadImage(DEMO_TOKEN, "application/octet-stream", data)
+      uploadImage(DEMO_USER_ID, "application/octet-stream", data)
           .andExpect(status().isCreated())
           .andExpect(jsonPath("$.result.contentType").value(type))
           .andExpect(jsonPath("$.result.width").value(width))
@@ -85,7 +85,7 @@ class ImageApiTests extends ApiTestSupport {
     @Test
     @DisplayName("Content-Type을 잘못 보내도(jpg를 image/png로) 실제 형식으로 저장된다")
     void wrongDeclaredType() throws Exception {
-      uploadImage(DEMO_TOKEN, "image/png", TestImages.encode("jpg", 10, 10))
+      uploadImage(DEMO_USER_ID, "image/png", TestImages.encode("jpg", 10, 10))
           .andExpect(status().isCreated())
           .andExpect(jsonPath("$.result.contentType").value("image/jpeg"));
     }
@@ -95,7 +95,7 @@ class ImageApiTests extends ApiTestSupport {
     void noContentType() throws Exception {
       mvc.perform(multipart("/api/images")
               .file(new MockMultipartFile("file", "image", null, TestImages.png()))
-              .header(LoginUser.HEADER, DEMO_TOKEN))
+              .header(LoginUser.HEADER, authorization(DEMO_USER_ID)))
           .andExpect(status().isCreated())
           .andExpect(jsonPath("$.result.contentType").value("image/png"));
     }
@@ -104,7 +104,7 @@ class ImageApiTests extends ApiTestSupport {
     @ValueSource(strings = {"텍스트 파일입니다", "%PDF-1.7 fake", "<svg xmlns=\"http://www.w3.org/2000/svg\"/>",
         "<html><script>alert(1)</script></html>", "BM fake bitmap"})
     void disguisedFiles(String content) throws Exception {
-      uploadImage(DEMO_TOKEN, "image/png", content.getBytes(StandardCharsets.UTF_8))
+      uploadImage(DEMO_USER_ID, "image/png", content.getBytes(StandardCharsets.UTF_8))
           .andExpect(status().isBadRequest())
           .andExpect(jsonPath("$.isSuccess").value(false))
           .andExpect(jsonPath("$.code").value("IMAGE4002"));
@@ -114,14 +114,14 @@ class ImageApiTests extends ApiTestSupport {
     @DisplayName("시그니처만 맞고 헤더가 손상된 파일 → 400 IMAGE4002")
     void corruptedHeader() throws Exception {
       byte[] truncatedPng = java.util.Arrays.copyOf(TestImages.png(), 12);
-      uploadImage(DEMO_TOKEN, "image/png", truncatedPng)
+      uploadImage(DEMO_USER_ID, "image/png", truncatedPng)
           .andExpect(status().isBadRequest())
           .andExpect(jsonPath("$.code").value("IMAGE4002"));
       byte[] jpegMagicOnly = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 0, 0, 0};
-      uploadImage(DEMO_TOKEN, "image/jpeg", jpegMagicOnly)
+      uploadImage(DEMO_USER_ID, "image/jpeg", jpegMagicOnly)
           .andExpect(status().isBadRequest())
           .andExpect(jsonPath("$.code").value("IMAGE4002"));
-      uploadImage(DEMO_TOKEN, "image/heic", TestImages.heic("avis", 100, 100))
+      uploadImage(DEMO_USER_ID, "image/heic", TestImages.heic("avis", 100, 100))
           .andExpect(status().isBadRequest())
           .andExpect(jsonPath("$.code").value("IMAGE4002"));
     }
@@ -131,9 +131,9 @@ class ImageApiTests extends ApiTestSupport {
     @Test
     @DisplayName("아이폰 48MP 원본(8064x6048), 8192x8192 → 201")
     void dimensionOk() throws Exception {
-      uploadImage(DEMO_TOKEN, "image/heic", TestImages.heic("heic", 8064, 6048))
+      uploadImage(DEMO_USER_ID, "image/heic", TestImages.heic("heic", 8064, 6048))
           .andExpect(status().isCreated());
-      uploadImage(DEMO_TOKEN, "image/png", TestImages.pngClaiming(8192, 8192))
+      uploadImage(DEMO_USER_ID, "image/png", TestImages.pngClaiming(8192, 8192))
           .andExpect(status().isCreated())
           .andExpect(jsonPath("$.result.width").value(8192));
     }
@@ -141,16 +141,16 @@ class ImageApiTests extends ApiTestSupport {
     @Test
     @DisplayName("가로 또는 세로가 8192px 초과 → 400 IMAGE4003")
     void dimensionTooLarge() throws Exception {
-      uploadImage(DEMO_TOKEN, "image/png", TestImages.pngClaiming(8193, 100))
+      uploadImage(DEMO_USER_ID, "image/png", TestImages.pngClaiming(8193, 100))
           .andExpect(status().isBadRequest())
           .andExpect(jsonPath("$.code").value("IMAGE4003"));
-      uploadImage(DEMO_TOKEN, "image/png", TestImages.pngClaiming(100, 8193))
+      uploadImage(DEMO_USER_ID, "image/png", TestImages.pngClaiming(100, 8193))
           .andExpect(status().isBadRequest())
           .andExpect(jsonPath("$.code").value("IMAGE4003"));
-      uploadImage(DEMO_TOKEN, "image/webp", TestImages.webp(16000, 4000))
+      uploadImage(DEMO_USER_ID, "image/webp", TestImages.webp(16000, 4000))
           .andExpect(status().isBadRequest())
           .andExpect(jsonPath("$.code").value("IMAGE4003"));
-      uploadImage(DEMO_TOKEN, "image/heic", TestImages.heic("heic", 9000, 9000))
+      uploadImage(DEMO_USER_ID, "image/heic", TestImages.heic("heic", 9000, 9000))
           .andExpect(status().isBadRequest())
           .andExpect(jsonPath("$.code").value("IMAGE4003"));
     }
@@ -160,7 +160,7 @@ class ImageApiTests extends ApiTestSupport {
     @Test
     @DisplayName("빈 파일 → 400 IMAGE4001")
     void emptyFile() throws Exception {
-      uploadImage(DEMO_TOKEN, "image/png", new byte[0])
+      uploadImage(DEMO_USER_ID, "image/png", new byte[0])
           .andExpect(status().isBadRequest())
           .andExpect(jsonPath("$.code").value("IMAGE4001"));
     }
@@ -168,12 +168,12 @@ class ImageApiTests extends ApiTestSupport {
     @Test
     @DisplayName("file 파트 누락 / 다른 이름의 파트 → 400")
     void missingPart() throws Exception {
-      mvc.perform(multipart("/api/images").header(LoginUser.HEADER, DEMO_TOKEN))
+      mvc.perform(multipart("/api/images").header(LoginUser.HEADER, authorization(DEMO_USER_ID)))
           .andExpect(status().isBadRequest())
           .andExpect(jsonPath("$.code").value("COMMON400"));
       mvc.perform(multipart("/api/images")
               .file(new MockMultipartFile("image", "a.png", "image/png", TestImages.png()))
-              .header(LoginUser.HEADER, DEMO_TOKEN))
+              .header(LoginUser.HEADER, authorization(DEMO_USER_ID)))
           .andExpect(status().isBadRequest());
     }
 
@@ -181,20 +181,20 @@ class ImageApiTests extends ApiTestSupport {
     @DisplayName("multipart가 아닌 요청 → 415")
     void notMultipart() throws Exception {
       mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/images")
-              .header(LoginUser.HEADER, DEMO_TOKEN)
+              .header(LoginUser.HEADER, authorization(DEMO_USER_ID))
               .contentType("application/json").content("{}"))
           .andExpect(status().isUnsupportedMediaType())
           .andExpect(jsonPath("$.code").value("COMMON415"));
     }
 
     @Test
-    @DisplayName("헤더 누락 → 400, 모르는 기기 토큰 → 404 USER404")
+    @DisplayName("세션 헤더 누락 또는 미발급 세션 → 401")
     void authHeader() throws Exception {
       mvc.perform(multipart("/api/images").file(new MockMultipartFile("file", "a.png", "image/png", TestImages.png())))
-          .andExpect(status().isBadRequest());
-      uploadImage("unknown-device-token", "image/png", TestImages.png())
-          .andExpect(status().isNotFound())
-          .andExpect(jsonPath("$.code").value("USER404"));
+          .andExpect(status().isUnauthorized());
+      uploadImage(UNKNOWN_ID, "image/png", TestImages.png())
+          .andExpect(status().isUnauthorized())
+          .andExpect(jsonPath("$.code").value("TEST401"));
     }
   }
 
@@ -206,7 +206,7 @@ class ImageApiTests extends ApiTestSupport {
     @DisplayName("업로드한 바이트 그대로 + 실제 Content-Type · 캐시 · nosniff 헤더, 인증 불필요")
     void returnsBinary() throws Exception {
       byte[] webp = TestImages.webp(64, 64);
-      String imageId = JsonPath.read(uploadImage(DEMO_TOKEN, "image/webp", webp)
+      String imageId = JsonPath.read(uploadImage(DEMO_USER_ID, "image/webp", webp)
           .andReturn().getResponse().getContentAsString(), "$.result.imageId");
 
       mvc.perform(get("/api/images/" + imageId))

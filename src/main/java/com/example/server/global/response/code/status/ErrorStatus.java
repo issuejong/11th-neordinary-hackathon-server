@@ -20,11 +20,14 @@ public enum ErrorStatus implements BaseCode {
   // 파일 업로드
   _FILE_TOO_LARGE(HttpStatus.BAD_REQUEST, "FILE400", "파일 크기가 허용 한도(파일 10MB, 요청 20MB)를 초과했습니다."),
 
-  // 사용자 (임시 인증: X-Device-Token 헤더)
+  // 사용자
   USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER404", "사용자를 찾을 수 없습니다."),
   USER_INVALID_NICKNAME(HttpStatus.BAD_REQUEST, "USER4001", "닉네임은 2자 이상 10자 이하여야 합니다."),
-  USER_SELECTION_REQUIRED(HttpStatus.BAD_REQUEST, "USER4002", "여러 프로필이 있습니다. X-User-Id에 선택한 사용자 ID를 보내 주세요."),
   USER_DUPLICATE_NICKNAME(HttpStatus.CONFLICT, "USER4091", "중복된 이름입니다. 다른 이름을 입력해 주세요."),
+  TEST_SESSION_INVALID(HttpStatus.UNAUTHORIZED, "TEST401", "테스트 계정 사용권이 없거나 만료됐습니다."),
+  TEST_ACCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND, "TEST404", "등록된 테스트 계정을 찾을 수 없습니다."),
+  TEST_ACCOUNT_IN_USE(HttpStatus.CONFLICT, "TEST4091", "다른 사람이 이 테스트 계정을 사용 중입니다."),
+  TEST_SLOT_OCCUPIED(HttpStatus.CONFLICT, "TEST4092", "이 위치에 이미 테스트 계정이 등록되어 있습니다."),
 
   // 이미지
   IMAGE_EMPTY(HttpStatus.BAD_REQUEST, "IMAGE4001", "빈 파일은 업로드할 수 없습니다."),

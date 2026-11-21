@@ -26,13 +26,13 @@ class RoutineCommentApiTests extends ApiTestSupport {
 
   @Test
   void createsListsEditsAndDeletesComments() throws Exception {
-    String routineId = createRoutine(DEMO_TOKEN);
+    String routineId = createRoutine(DEMO_USER_ID);
     String path = "/api/routines/" + routineId + "/comments";
-    mvc.perform(get(path).header(LoginUser.HEADER, DEMO_TOKEN))
+    mvc.perform(get(path).header(LoginUser.HEADER, authorization(DEMO_USER_ID)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.result").isEmpty());
 
-    String first = createComment(path, DEMO_TOKEN, BODY)
+    String first = createComment(path, DEMO_USER_ID, BODY)
         .andExpect(status().isCreated())
         .andExpect(header().string("Location", startsWith(path + "/")))
         .andExpect(jsonPath("$.result.isMine").value(true))
@@ -48,7 +48,7 @@ class RoutineCommentApiTests extends ApiTestSupport {
         """).andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
     String secondId = JsonPath.read(second, "$.result.commentId");
 
-    mvc.perform(get(path).header(LoginUser.HEADER, DEMO_TOKEN))
+    mvc.perform(get(path).header(LoginUser.HEADER, authorization(DEMO_USER_ID)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.result[0].commentId").value(firstId))
         .andExpect(jsonPath("$.result[0].isMine").value(true))
@@ -61,7 +61,7 @@ class RoutineCommentApiTests extends ApiTestSupport {
         .andExpect(jsonPath("$.result[1].isMine").value(false));
 
     String firstPath = path + "/" + firstId;
-    mvc.perform(patch(firstPath).header(LoginUser.HEADER, DEMO_TOKEN)
+    mvc.perform(patch(firstPath).header(LoginUser.HEADER, authorization(DEMO_USER_ID))
             .contentType(MediaType.APPLICATION_JSON).content("""
                 {"content":"내일부터 해볼게요."}
                 """))
@@ -69,14 +69,14 @@ class RoutineCommentApiTests extends ApiTestSupport {
         .andExpect(jsonPath("$.result.content").value("내일부터 해볼게요."))
         .andExpect(jsonPath("$.result.createdAt").value(createdAt));
 
-    mvc.perform(delete(firstPath).header(LoginUser.HEADER, DEMO_TOKEN))
+    mvc.perform(delete(firstPath).header(LoginUser.HEADER, authorization(DEMO_USER_ID)))
         .andExpect(status().isOk());
-    mvc.perform(get(path).header(LoginUser.HEADER, DEMO_TOKEN))
+    mvc.perform(get(path).header(LoginUser.HEADER, authorization(DEMO_USER_ID)))
         .andExpect(jsonPath("$.result.length()").value(1))
         .andExpect(jsonPath("$.result[0].commentId").value(secondId));
     mvc.perform(get("/api/routines/" + routineId))
         .andExpect(jsonPath("$.result.commentCount").value(1));
-    mvc.perform(delete(firstPath).header(LoginUser.HEADER, DEMO_TOKEN))
+    mvc.perform(delete(firstPath).header(LoginUser.HEADER, authorization(DEMO_USER_ID)))
         .andExpect(status().isNotFound());
   }
 
@@ -86,17 +86,17 @@ class RoutineCommentApiTests extends ApiTestSupport {
     String commentPath = path + "/" + DemoData.COMMENT_ID;
     String otherToken = newUser();
 
-    mvc.perform(patch(commentPath).header(LoginUser.HEADER, otherToken)
+    mvc.perform(patch(commentPath).header(LoginUser.HEADER, authorization(otherToken))
             .contentType(MediaType.APPLICATION_JSON).content(BODY))
         .andExpect(status().isForbidden())
         .andExpect(jsonPath("$.code").value("COMMENT403"));
-    mvc.perform(delete(commentPath).header(LoginUser.HEADER, otherToken))
+    mvc.perform(delete(commentPath).header(LoginUser.HEADER, authorization(otherToken)))
         .andExpect(status().isForbidden());
     mvc.perform(delete("/api/routines/" + DemoData.EDITABLE_ROUTINE_ID + "/comments/" + DemoData.COMMENT_ID)
-            .header(LoginUser.HEADER, DEMO_TOKEN))
+            .header(LoginUser.HEADER, authorization(DEMO_USER_ID)))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.code").value("COMMENT404"));
-    mvc.perform(get("/api/routines/" + UNKNOWN_ID + "/comments").header(LoginUser.HEADER, DEMO_TOKEN))
+    mvc.perform(get("/api/routines/" + UNKNOWN_ID + "/comments").header(LoginUser.HEADER, authorization(DEMO_USER_ID)))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.code").value("ROUTINE404"));
   }
@@ -104,22 +104,22 @@ class RoutineCommentApiTests extends ApiTestSupport {
   @Test
   void rejectsInvalidInputs() throws Exception {
     String path = "/api/routines/" + DemoData.ROUTINE_ID + "/comments";
-    createComment(path, DEMO_TOKEN, """
+    createComment(path, DEMO_USER_ID, """
         {"content":"  "}
         """).andExpect(status().isBadRequest());
-    createComment(path, DEMO_TOKEN, "{\"content\":\"" + "가".repeat(51) + "\"}")
+    createComment(path, DEMO_USER_ID, "{\"content\":\"" + "가".repeat(51) + "\"}")
         .andExpect(status().isBadRequest());
     mvc.perform(post(path).contentType(MediaType.APPLICATION_JSON).content(BODY))
-        .andExpect(status().isBadRequest());
-    mvc.perform(get(path).header(LoginUser.HEADER, "unknown-comment-viewer"))
-        .andExpect(status().isNotFound())
-        .andExpect(jsonPath("$.code").value("USER404"));
-    mvc.perform(delete(path + "/invalid").header(LoginUser.HEADER, DEMO_TOKEN))
+        .andExpect(status().isUnauthorized());
+    mvc.perform(get(path).header(LoginUser.HEADER, authorization(UNKNOWN_ID)))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.code").value("TEST401"));
+    mvc.perform(delete(path + "/invalid").header(LoginUser.HEADER, authorization(DEMO_USER_ID)))
         .andExpect(status().isBadRequest());
   }
 
   private ResultActions createComment(String path, String token, String body) throws Exception {
-    return mvc.perform(post(path).header(LoginUser.HEADER, token)
+    return mvc.perform(post(path).header(LoginUser.HEADER, authorization(token))
         .contentType(MediaType.APPLICATION_JSON).content(body));
   }
 }

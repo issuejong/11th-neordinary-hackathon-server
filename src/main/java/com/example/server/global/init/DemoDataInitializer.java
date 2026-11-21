@@ -54,8 +54,8 @@ public class DemoDataInitializer implements ApplicationRunner {
     Image image2 = defaultImage(DemoData.IMAGE_ID_2, new Color(0x8E, 0xC5, 0xFC));
     Image image3 = defaultImage(DemoData.IMAGE_ID_3, new Color(0xA7, 0xE3, 0xB5));
 
-    User user = demoUser(DemoData.USER_ID, DemoData.USER_DEVICE_TOKEN, "데모 유저", image1);
-    User participant = demoUser(DemoData.PARTICIPANT_ID, DemoData.PARTICIPANT_DEVICE_TOKEN, "데모 참여자", image2);
+    User user = demoUser(DemoData.USER_ID, DemoData.USER_NICKNAME, image1);
+    User participant = demoUser(DemoData.PARTICIPANT_ID, "데모 참여자", image2);
 
     if (!routineRepository.existsByPublicId(DemoData.ROUTINE_ID)) {
       Routine routine = routineRepository.save(
@@ -128,7 +128,7 @@ public class DemoDataInitializer implements ApplicationRunner {
         .orElseGet(() -> imageRepository.save(new Image(publicId, "image/png", solidPng(color), null)));
   }
 
-  private User demoUser(String publicId, String deviceToken, String nickname, Image profileImage) {
+  private User demoUser(String publicId, String nickname, Image profileImage) {
     List<User> users = entityManager
         .createQuery("from AppUser u where u.publicId = :publicId", User.class)
         .setParameter("publicId", publicId)
@@ -136,7 +136,7 @@ public class DemoDataInitializer implements ApplicationRunner {
     if (!users.isEmpty()) {
       return users.getFirst();
     }
-    User user = new User(publicId, deviceToken, nickname, profileImage);
+    User user = new User(publicId, nickname, profileImage);
     entityManager.persist(user);
     return user;
   }

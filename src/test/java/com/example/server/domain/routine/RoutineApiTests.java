@@ -43,7 +43,7 @@ class RoutineApiTests extends ApiTestSupport {
     @Test
     @DisplayName("201 + Location 헤더 + 상세 응답, 스텝은 요청 순서대로 1..n")
     void created() throws Exception {
-      postRoutine(DEMO_TOKEN, routineJson("갓생 저녁 루틴", "자기 전 루틴",
+      postRoutine(DEMO_USER_ID, routineJson("갓생 저녁 루틴", "자기 전 루틴",
           card(DemoData.IMAGE_ID, "첫 번째 스텝 제목", "첫 내용", "21:00"),
           card(DemoData.IMAGE_ID_2, "두 번째 스텝 제목", "22:30")))
           .andExpect(status().isCreated())
@@ -67,21 +67,21 @@ class RoutineApiTests extends ApiTestSupport {
     }
 
     @Test
-    @DisplayName("응답에 기기 토큰과 내부 PK가 노출되지 않는다")
+    @DisplayName("응답에 점유 세션과 내부 PK가 노출되지 않는다")
     void doesNotLeakSecrets() throws Exception {
-      String body = postRoutine(DEMO_TOKEN, routineJson("노출 검사 루틴", null, validCard()))
+      String body = postRoutine(DEMO_USER_ID, routineJson("노출 검사 루틴", null, validCard()))
           .andExpect(status().isCreated())
           .andReturn().getResponse().getContentAsString();
       org.assertj.core.api.Assertions.assertThat(body)
-          .doesNotContain(DEMO_TOKEN)
+          .doesNotContain(authorization(DEMO_USER_ID).substring("Bearer ".length()))
           .doesNotContain("\"id\"")
-          .doesNotContain("deviceToken");
+          .doesNotContain("accessToken");
     }
 
     @Test
     @DisplayName("소개는 선택이다 (생략 시 null)")
     void contentIsOptional() throws Exception {
-      postRoutine(DEMO_TOKEN, routineJson("소개 없는 루틴", null, validCard()))
+      postRoutine(DEMO_USER_ID, routineJson("소개 없는 루틴", null, validCard()))
           .andExpect(status().isCreated())
           .andExpect(jsonPath("$.result.content").doesNotExist());
     }
@@ -89,7 +89,7 @@ class RoutineApiTests extends ApiTestSupport {
     @Test
     @DisplayName("스텝 내용은 선택이다")
     void cardContentIsOptional() throws Exception {
-      postRoutine(DEMO_TOKEN, routineJson("스텝 내용 없음", null, card(DemoData.IMAGE_ID, "내용 없는 스텝", "07:00")))
+      postRoutine(DEMO_USER_ID, routineJson("스텝 내용 없음", null, card(DemoData.IMAGE_ID, "내용 없는 스텝", "07:00")))
           .andExpect(status().isCreated())
           .andExpect(jsonPath("$.result.cards[0].content").doesNotExist());
     }
@@ -97,8 +97,8 @@ class RoutineApiTests extends ApiTestSupport {
     @Test
     @DisplayName("본인이 업로드한 이미지로 스텝을 만들 수 있다")
     void ownUploadedImage() throws Exception {
-      String imageId = uploadImageId(DEMO_TOKEN);
-      postRoutine(DEMO_TOKEN, routineJson("내 이미지 루틴", null, card(imageId, "내 이미지 스텝", "07:00")))
+      String imageId = uploadImageId(DEMO_USER_ID);
+      postRoutine(DEMO_USER_ID, routineJson("내 이미지 루틴", null, card(imageId, "내 이미지 스텝", "07:00")))
           .andExpect(status().isCreated())
           .andExpect(jsonPath("$.result.cards[0].imageId").value(imageId))
           .andExpect(jsonPath("$.result.cards[0].imageUrl").value(org.hamcrest.Matchers.endsWith("/api/images/" + imageId)));
@@ -107,7 +107,7 @@ class RoutineApiTests extends ApiTestSupport {
     @Test
     @DisplayName("같은 이미지를 여러 스텝에 써도 된다")
     void sameImageForMultipleCards() throws Exception {
-      postRoutine(DEMO_TOKEN, routineJson("같은 이미지 루틴", null, cards(3)))
+      postRoutine(DEMO_USER_ID, routineJson("같은 이미지 루틴", null, cards(3)))
           .andExpect(status().isCreated())
           .andExpect(jsonPath("$.result.cards.length()").value(3));
     }
@@ -117,14 +117,14 @@ class RoutineApiTests extends ApiTestSupport {
     @ParameterizedTest(name = "제목 {0}자 → 201")
     @ValueSource(ints = {5, 30})
     void titleBoundaryOk(int length) throws Exception {
-      postRoutine(DEMO_TOKEN, routineJson(ofLength(length), null, validCard()))
+      postRoutine(DEMO_USER_ID, routineJson(ofLength(length), null, validCard()))
           .andExpect(status().isCreated());
     }
 
     @ParameterizedTest(name = "제목 {0}자 → 400")
     @ValueSource(ints = {0, 4, 31})
     void titleBoundaryFail(int length) throws Exception {
-      postRoutine(DEMO_TOKEN, routineJson(ofLength(length), null, validCard()))
+      postRoutine(DEMO_USER_ID, routineJson(ofLength(length), null, validCard()))
           .andExpect(status().isBadRequest())
           .andExpect(jsonPath("$.isSuccess").value(false))
           .andExpect(jsonPath("$.code").value("COMMON400"))
@@ -134,10 +134,10 @@ class RoutineApiTests extends ApiTestSupport {
     @Test
     @DisplayName("제목 누락 / 공백만 → 400")
     void titleMissingOrBlank() throws Exception {
-      postRoutine(DEMO_TOKEN, routineJson(null, null, validCard()))
+      postRoutine(DEMO_USER_ID, routineJson(null, null, validCard()))
           .andExpect(status().isBadRequest())
           .andExpect(jsonPath("$.result.title").isString());
-      postRoutine(DEMO_TOKEN, routineJson("       ", null, validCard()))
+      postRoutine(DEMO_USER_ID, routineJson("       ", null, validCard()))
           .andExpect(status().isBadRequest())
           .andExpect(jsonPath("$.result.title").isString());
     }
@@ -147,9 +147,9 @@ class RoutineApiTests extends ApiTestSupport {
     @Test
     @DisplayName("소개 500자 → 201, 501자 → 400")
     void contentBoundary() throws Exception {
-      postRoutine(DEMO_TOKEN, routineJson("소개 경계값 루틴", ofLength(500), validCard()))
+      postRoutine(DEMO_USER_ID, routineJson("소개 경계값 루틴", ofLength(500), validCard()))
           .andExpect(status().isCreated());
-      postRoutine(DEMO_TOKEN, routineJson("소개 경계값 루틴", ofLength(501), validCard()))
+      postRoutine(DEMO_USER_ID, routineJson("소개 경계값 루틴", ofLength(501), validCard()))
           .andExpect(status().isBadRequest())
           .andExpect(jsonPath("$.result.content").isString());
     }
@@ -159,7 +159,7 @@ class RoutineApiTests extends ApiTestSupport {
     @Test
     @DisplayName("스텝 10개 → 201")
     void tenCards() throws Exception {
-      postRoutine(DEMO_TOKEN, routineJson("스텝 열 개 루틴", null, cards(10)))
+      postRoutine(DEMO_USER_ID, routineJson("스텝 열 개 루틴", null, cards(10)))
           .andExpect(status().isCreated())
           .andExpect(jsonPath("$.result.cards.length()").value(10))
           .andExpect(jsonPath("$.result.cards[9].order").value(10));
@@ -168,16 +168,16 @@ class RoutineApiTests extends ApiTestSupport {
     @Test
     @DisplayName("스텝 0개 / 11개 / 누락 → 400")
     void cardCountFail() throws Exception {
-      postRoutine(DEMO_TOKEN, routineJson("스텝 없는 루틴", null))
+      postRoutine(DEMO_USER_ID, routineJson("스텝 없는 루틴", null))
           .andExpect(status().isBadRequest())
           .andExpect(jsonPath("$.result.cards").isString());
-      postRoutine(DEMO_TOKEN, routineJson("스텝 많은 루틴", null, cards(11)))
+      postRoutine(DEMO_USER_ID, routineJson("스텝 많은 루틴", null, cards(11)))
           .andExpect(status().isBadRequest())
           .andExpect(jsonPath("$.result.cards").isString());
-      postRoutine(DEMO_TOKEN, "{\"title\": \"스텝 누락 루틴\"}")
+      postRoutine(DEMO_USER_ID, "{\"title\": \"스텝 누락 루틴\"}")
           .andExpect(status().isBadRequest())
           .andExpect(jsonPath("$.result.cards").isString());
-      postRoutine(DEMO_TOKEN, "{\"title\": \"스텝 null 원소\", \"cards\": [null]}")
+      postRoutine(DEMO_USER_ID, "{\"title\": \"스텝 null 원소\", \"cards\": [null]}")
           .andExpect(status().isBadRequest());
     }
 
@@ -186,14 +186,14 @@ class RoutineApiTests extends ApiTestSupport {
     @ParameterizedTest(name = "스텝 제목 {0}자 → 201")
     @ValueSource(ints = {5, 30})
     void cardTitleBoundaryOk(int length) throws Exception {
-      postRoutine(DEMO_TOKEN, routineJson("스텝 제목 경계", null, card(DemoData.IMAGE_ID, ofLength(length), "07:00")))
+      postRoutine(DEMO_USER_ID, routineJson("스텝 제목 경계", null, card(DemoData.IMAGE_ID, ofLength(length), "07:00")))
           .andExpect(status().isCreated());
     }
 
     @ParameterizedTest(name = "스텝 제목 {0}자 → 400")
     @ValueSource(ints = {0, 4, 31})
     void cardTitleBoundaryFail(int length) throws Exception {
-      postRoutine(DEMO_TOKEN, routineJson("스텝 제목 경계", null, card(DemoData.IMAGE_ID, ofLength(length), "07:00")))
+      postRoutine(DEMO_USER_ID, routineJson("스텝 제목 경계", null, card(DemoData.IMAGE_ID, ofLength(length), "07:00")))
           .andExpect(status().isBadRequest())
           .andExpect(jsonPath("$.result['cards[0].title']").isString());
     }
@@ -201,7 +201,7 @@ class RoutineApiTests extends ApiTestSupport {
     @Test
     @DisplayName("스텝 제목 누락 → 400")
     void cardTitleMissing() throws Exception {
-      postRoutine(DEMO_TOKEN, routineJson("스텝 제목 누락", null, card(DemoData.IMAGE_ID, null, "07:00")))
+      postRoutine(DEMO_USER_ID, routineJson("스텝 제목 누락", null, card(DemoData.IMAGE_ID, null, "07:00")))
           .andExpect(status().isBadRequest())
           .andExpect(jsonPath("$.result['cards[0].title']").isString());
     }
@@ -209,10 +209,10 @@ class RoutineApiTests extends ApiTestSupport {
     @Test
     @DisplayName("스텝 내용 100자 → 201, 101자 → 400")
     void cardContentBoundary() throws Exception {
-      postRoutine(DEMO_TOKEN, routineJson("스텝 내용 경계", null,
+      postRoutine(DEMO_USER_ID, routineJson("스텝 내용 경계", null,
           card(DemoData.IMAGE_ID, "스텝 제목입니다", ofLength(100), "07:00")))
           .andExpect(status().isCreated());
-      postRoutine(DEMO_TOKEN, routineJson("스텝 내용 경계", null,
+      postRoutine(DEMO_USER_ID, routineJson("스텝 내용 경계", null,
           card(DemoData.IMAGE_ID, "스텝 제목입니다", ofLength(101), "07:00")))
           .andExpect(status().isBadRequest())
           .andExpect(jsonPath("$.result['cards[0].content']").isString());
@@ -221,7 +221,7 @@ class RoutineApiTests extends ApiTestSupport {
     @Test
     @DisplayName("스텝 시간 누락 → 400 (필수)")
     void cardTimeMissing() throws Exception {
-      postRoutine(DEMO_TOKEN, routineJson("시간 누락 루틴", null, card(DemoData.IMAGE_ID, "스텝 제목입니다", null)))
+      postRoutine(DEMO_USER_ID, routineJson("시간 누락 루틴", null, card(DemoData.IMAGE_ID, "스텝 제목입니다", null)))
           .andExpect(status().isBadRequest())
           .andExpect(jsonPath("$.result['cards[0].time']").isString());
     }
@@ -229,7 +229,7 @@ class RoutineApiTests extends ApiTestSupport {
     @ParameterizedTest(name = "스텝 시간 \"{0}\" → 400")
     @ValueSource(strings = {"25:00", "07:60", "7:00", "07:00:00", "아침", ""})
     void cardTimeInvalidFormat(String time) throws Exception {
-      postRoutine(DEMO_TOKEN, routineJson("시간 형식 루틴", null, card(DemoData.IMAGE_ID, "스텝 제목입니다", time)))
+      postRoutine(DEMO_USER_ID, routineJson("시간 형식 루틴", null, card(DemoData.IMAGE_ID, "스텝 제목입니다", time)))
           .andExpect(status().isBadRequest())
           .andExpect(jsonPath("$.code").value("COMMON400"));
     }
@@ -237,7 +237,7 @@ class RoutineApiTests extends ApiTestSupport {
     @ParameterizedTest(name = "스텝 시간 \"{0}\" → 201")
     @ValueSource(strings = {"00:00", "23:59"})
     void cardTimeBoundaryOk(String time) throws Exception {
-      postRoutine(DEMO_TOKEN, routineJson("시간 경계 루틴", null, card(DemoData.IMAGE_ID, "스텝 제목입니다", time)))
+      postRoutine(DEMO_USER_ID, routineJson("시간 경계 루틴", null, card(DemoData.IMAGE_ID, "스텝 제목입니다", time)))
           .andExpect(status().isCreated())
           .andExpect(jsonPath("$.result.cards[0].time").value(time));
     }
@@ -245,10 +245,10 @@ class RoutineApiTests extends ApiTestSupport {
     @Test
     @DisplayName("스텝 이미지 누락 / 형식 오류 → 400")
     void cardImageMissingOrInvalid() throws Exception {
-      postRoutine(DEMO_TOKEN, routineJson("이미지 누락 루틴", null, card(null, "스텝 제목입니다", "07:00")))
+      postRoutine(DEMO_USER_ID, routineJson("이미지 누락 루틴", null, card(null, "스텝 제목입니다", "07:00")))
           .andExpect(status().isBadRequest())
           .andExpect(jsonPath("$.result['cards[0].imageId']").isString());
-      postRoutine(DEMO_TOKEN, routineJson("이미지 형식 루틴", null, card("not-a-ulid", "스텝 제목입니다", "07:00")))
+      postRoutine(DEMO_USER_ID, routineJson("이미지 형식 루틴", null, card("not-a-ulid", "스텝 제목입니다", "07:00")))
           .andExpect(status().isBadRequest())
           .andExpect(jsonPath("$.result['cards[0].imageId']").isString());
     }
@@ -256,7 +256,7 @@ class RoutineApiTests extends ApiTestSupport {
     @Test
     @DisplayName("없는 이미지 → 404 IMAGE404")
     void cardImageNotFound() throws Exception {
-      postRoutine(DEMO_TOKEN, routineJson("없는 이미지 루틴", null, card(UNKNOWN_ID, "스텝 제목입니다", "07:00")))
+      postRoutine(DEMO_USER_ID, routineJson("없는 이미지 루틴", null, card(UNKNOWN_ID, "스텝 제목입니다", "07:00")))
           .andExpect(status().isNotFound())
           .andExpect(jsonPath("$.code").value("IMAGE404"));
     }
@@ -265,7 +265,7 @@ class RoutineApiTests extends ApiTestSupport {
     @DisplayName("다른 사용자가 올린 이미지 → 404 IMAGE404")
     void otherUsersImage() throws Exception {
       String othersImage = uploadImageId(newUser());
-      postRoutine(DEMO_TOKEN, routineJson("남의 이미지 루틴", null, card(othersImage, "스텝 제목입니다", "07:00")))
+      postRoutine(DEMO_USER_ID, routineJson("남의 이미지 루틴", null, card(othersImage, "스텝 제목입니다", "07:00")))
           .andExpect(status().isNotFound())
           .andExpect(jsonPath("$.code").value("IMAGE404"));
     }
@@ -273,7 +273,7 @@ class RoutineApiTests extends ApiTestSupport {
     @Test
     @DisplayName("여러 필드가 틀리면 모두 result에 담긴다")
     void multipleFieldErrors() throws Exception {
-      postRoutine(DEMO_TOKEN, routineJson("짧음", ofLength(501), card(null, "짧음", null)))
+      postRoutine(DEMO_USER_ID, routineJson("짧음", ofLength(501), card(null, "짧음", null)))
           .andExpect(status().isBadRequest())
           .andExpect(jsonPath("$.result.title").isString())
           .andExpect(jsonPath("$.result.content").isString())
@@ -287,31 +287,31 @@ class RoutineApiTests extends ApiTestSupport {
     @Test
     @DisplayName("깨진 JSON / 빈 본문 → 400, JSON이 아닌 Content-Type → 415")
     void malformedRequest() throws Exception {
-      postRoutine(DEMO_TOKEN, "{\"title\": ")
+      postRoutine(DEMO_USER_ID, "{\"title\": ")
           .andExpect(status().isBadRequest())
           .andExpect(jsonPath("$.code").value("COMMON400"));
-      postRoutine(DEMO_TOKEN, "")
+      postRoutine(DEMO_USER_ID, "")
           .andExpect(status().isBadRequest());
-      postRoutine(DEMO_TOKEN, "{\"title\": \"타입 오류 루틴\", \"cards\": \"문자열\"}")
+      postRoutine(DEMO_USER_ID, "{\"title\": \"타입 오류 루틴\", \"cards\": \"문자열\"}")
           .andExpect(status().isBadRequest());
-      mvc.perform(post("/api/routines").header(LoginUser.HEADER, DEMO_TOKEN)
+      mvc.perform(post("/api/routines").header(LoginUser.HEADER, authorization(DEMO_USER_ID))
               .contentType(MediaType.TEXT_PLAIN).content("hello"))
           .andExpect(status().isUnsupportedMediaType())
           .andExpect(jsonPath("$.code").value("COMMON415"));
     }
 
     @Test
-    @DisplayName("X-Device-Token 누락 → 400, 모르는 토큰 → 404 USER404, 255자 초과 → 400")
+    @DisplayName("누락되거나 유효하지 않은 세션 → 401")
     void authHeader() throws Exception {
       mvc.perform(post("/api/routines").contentType(MediaType.APPLICATION_JSON)
               .content(routineJson("헤더 없는 루틴", null, validCard())))
-          .andExpect(status().isBadRequest())
-          .andExpect(jsonPath("$.code").value("COMMON400"));
-      postRoutine("unknown-device-token", routineJson("모르는 토큰 루틴", null, validCard()))
-          .andExpect(status().isNotFound())
-          .andExpect(jsonPath("$.code").value("USER404"));
-      postRoutine("x".repeat(256), routineJson("긴 토큰 루틴", null, validCard()))
-          .andExpect(status().isBadRequest());
+          .andExpect(status().isUnauthorized())
+          .andExpect(jsonPath("$.code").value("TEST401"));
+      postRoutine(UNKNOWN_ID, routineJson("없는 사용자 ID 루틴", null, validCard()))
+          .andExpect(status().isUnauthorized())
+          .andExpect(jsonPath("$.code").value("TEST401"));
+      postRoutine("x".repeat(256), routineJson("잘못된 사용자 ID 루틴", null, validCard()))
+          .andExpect(status().isUnauthorized());
     }
   }
 
@@ -343,7 +343,7 @@ class RoutineApiTests extends ApiTestSupport {
     @Test
     @DisplayName("인증 헤더 없이 조회 가능")
     void publicAccess() throws Exception {
-      String routineId = createRoutine(DEMO_TOKEN);
+      String routineId = createRoutine(DEMO_USER_ID);
       mvc.perform(get("/api/routines/" + routineId))
           .andExpect(status().isOk());
     }
@@ -351,7 +351,7 @@ class RoutineApiTests extends ApiTestSupport {
     @Test
     @DisplayName("좋아요 · 댓글 수는 삭제(취소)되지 않은 것만 센다")
     void counts() throws Exception {
-      String routineId = createRoutine(DEMO_TOKEN);
+      String routineId = createRoutine(DEMO_USER_ID);
       tx.executeWithoutResult(status -> {
         Routine routine = entityManager.createQuery("from Routine r where r.publicId = :p", Routine.class)
             .setParameter("p", routineId).getSingleResult();
@@ -359,7 +359,7 @@ class RoutineApiTests extends ApiTestSupport {
         User liker = users.getFirst();
         entityManager.persist(new RoutineLike(routine, liker));
         RoutineLike canceled = new RoutineLike(routine, entityManager.createQuery(
-            "from AppUser u where u.deviceToken = :t", User.class)
+            "from AppUser u where u.publicId = :t", User.class)
             .setParameter("t", newUserInline()).getSingleResult());
         canceled.markDeleted(canceled.getUser().getId(), LocalDateTime.now());
         entityManager.persist(canceled);
@@ -398,12 +398,12 @@ class RoutineApiTests extends ApiTestSupport {
     @Test
     @DisplayName("제목 · 소개 수정, 스텝은 전체 교체 (개수 · 순서 · ID 변경)")
     void replacesCards() throws Exception {
-      String routineId = createRoutine(DEMO_TOKEN);
+      String routineId = createRoutine(DEMO_USER_ID);
       String before = mvc.perform(get("/api/routines/" + routineId))
           .andReturn().getResponse().getContentAsString();
       String oldCardId = JsonPath.read(before, "$.result.cards[0].cardId");
 
-      mvc.perform(put("/api/routines/" + routineId).header(LoginUser.HEADER, DEMO_TOKEN)
+      mvc.perform(put("/api/routines/" + routineId).header(LoginUser.HEADER, authorization(DEMO_USER_ID))
               .contentType(MediaType.APPLICATION_JSON)
               .content(routineJson("수정된 루틴 제목", "수정된 소개",
                   card(DemoData.IMAGE_ID_3, "바뀐 첫 번째 스텝", "06:00"),
@@ -428,8 +428,8 @@ class RoutineApiTests extends ApiTestSupport {
     @Test
     @DisplayName("스텝을 줄이고, 소개를 생략하면 소개가 지워진다")
     void shrinkAndClearContent() throws Exception {
-      String routineId = createRoutine(DEMO_TOKEN);
-      mvc.perform(put("/api/routines/" + routineId).header(LoginUser.HEADER, DEMO_TOKEN)
+      String routineId = createRoutine(DEMO_USER_ID);
+      mvc.perform(put("/api/routines/" + routineId).header(LoginUser.HEADER, authorization(DEMO_USER_ID))
               .contentType(MediaType.APPLICATION_JSON)
               .content(routineJson("스텝 하나만 남김", null, validCard())))
           .andExpect(status().isOk())
@@ -440,8 +440,8 @@ class RoutineApiTests extends ApiTestSupport {
     @Test
     @DisplayName("순서만 바꿔도 유니크 키 충돌 없이 저장된다")
     void reorder() throws Exception {
-      String routineId = createRoutine(DEMO_TOKEN);
-      mvc.perform(put("/api/routines/" + routineId).header(LoginUser.HEADER, DEMO_TOKEN)
+      String routineId = createRoutine(DEMO_USER_ID);
+      mvc.perform(put("/api/routines/" + routineId).header(LoginUser.HEADER, authorization(DEMO_USER_ID))
               .contentType(MediaType.APPLICATION_JSON)
               .content(routineJson("순서 바꾼 루틴", null,
                   card(DemoData.IMAGE_ID_2, "두 번째 스텝 제목", "08:00"),
@@ -454,8 +454,8 @@ class RoutineApiTests extends ApiTestSupport {
     @Test
     @DisplayName("생성과 같은 검증 규칙 → 400")
     void validation() throws Exception {
-      String routineId = createRoutine(DEMO_TOKEN);
-      mvc.perform(put("/api/routines/" + routineId).header(LoginUser.HEADER, DEMO_TOKEN)
+      String routineId = createRoutine(DEMO_USER_ID);
+      mvc.perform(put("/api/routines/" + routineId).header(LoginUser.HEADER, authorization(DEMO_USER_ID))
               .contentType(MediaType.APPLICATION_JSON)
               .content(routineJson("짧음", null, cards(11))))
           .andExpect(status().isBadRequest())
@@ -471,8 +471,8 @@ class RoutineApiTests extends ApiTestSupport {
     @Test
     @DisplayName("없는 이미지로 수정 → 404, 기존 스텝은 롤백되어 유지")
     void rollbackOnMissingImage() throws Exception {
-      String routineId = createRoutine(DEMO_TOKEN);
-      mvc.perform(put("/api/routines/" + routineId).header(LoginUser.HEADER, DEMO_TOKEN)
+      String routineId = createRoutine(DEMO_USER_ID);
+      mvc.perform(put("/api/routines/" + routineId).header(LoginUser.HEADER, authorization(DEMO_USER_ID))
               .contentType(MediaType.APPLICATION_JSON)
               .content(routineJson("없는 이미지로 수정", null, card(UNKNOWN_ID, "스텝 제목입니다", "07:00"))))
           .andExpect(status().isNotFound())
@@ -486,8 +486,8 @@ class RoutineApiTests extends ApiTestSupport {
     @Test
     @DisplayName("작성자가 아니면 403 ROUTINE403, 데이터는 그대로")
     void forbidden() throws Exception {
-      String routineId = createRoutine(DEMO_TOKEN);
-      mvc.perform(put("/api/routines/" + routineId).header(LoginUser.HEADER, newUser())
+      String routineId = createRoutine(DEMO_USER_ID);
+      mvc.perform(put("/api/routines/" + routineId).header(LoginUser.HEADER, authorization(newUser()))
               .contentType(MediaType.APPLICATION_JSON)
               .content(routineJson("남의 루틴 수정", null, validCard())))
           .andExpect(status().isForbidden())
@@ -497,9 +497,9 @@ class RoutineApiTests extends ApiTestSupport {
     }
 
     @Test
-    @DisplayName("없는 루틴 → 404, 헤더 누락 → 400")
+    @DisplayName("없는 루틴 → 404, 세션 헤더 누락 → 401")
     void notFoundAndNoHeader() throws Exception {
-      mvc.perform(put("/api/routines/" + UNKNOWN_ID).header(LoginUser.HEADER, DEMO_TOKEN)
+      mvc.perform(put("/api/routines/" + UNKNOWN_ID).header(LoginUser.HEADER, authorization(DEMO_USER_ID))
               .contentType(MediaType.APPLICATION_JSON)
               .content(routineJson("없는 루틴 수정", null, validCard())))
           .andExpect(status().isNotFound())
@@ -507,7 +507,7 @@ class RoutineApiTests extends ApiTestSupport {
       mvc.perform(put("/api/routines/" + UNKNOWN_ID)
               .contentType(MediaType.APPLICATION_JSON)
               .content(routineJson("헤더 없는 수정", null, validCard())))
-          .andExpect(status().isBadRequest());
+          .andExpect(status().isUnauthorized());
     }
   }
 
@@ -519,8 +519,8 @@ class RoutineApiTests extends ApiTestSupport {
     @Test
     @DisplayName("삭제 → 200, 이후 조회 · 수정 · 재삭제는 404")
     void softDelete() throws Exception {
-      String routineId = createRoutine(DEMO_TOKEN);
-      mvc.perform(delete("/api/routines/" + routineId).header(LoginUser.HEADER, DEMO_TOKEN))
+      String routineId = createRoutine(DEMO_USER_ID);
+      mvc.perform(delete("/api/routines/" + routineId).header(LoginUser.HEADER, authorization(DEMO_USER_ID)))
           .andExpect(status().isOk())
           .andExpect(jsonPath("$.isSuccess").value(true))
           .andExpect(jsonPath("$.code").value("COMMON200"))
@@ -529,19 +529,19 @@ class RoutineApiTests extends ApiTestSupport {
       mvc.perform(get("/api/routines/" + routineId))
           .andExpect(status().isNotFound())
           .andExpect(jsonPath("$.code").value("ROUTINE404"));
-      mvc.perform(put("/api/routines/" + routineId).header(LoginUser.HEADER, DEMO_TOKEN)
+      mvc.perform(put("/api/routines/" + routineId).header(LoginUser.HEADER, authorization(DEMO_USER_ID))
               .contentType(MediaType.APPLICATION_JSON)
               .content(routineJson("삭제된 루틴 수정", null, validCard())))
           .andExpect(status().isNotFound());
-      mvc.perform(delete("/api/routines/" + routineId).header(LoginUser.HEADER, DEMO_TOKEN))
+      mvc.perform(delete("/api/routines/" + routineId).header(LoginUser.HEADER, authorization(DEMO_USER_ID)))
           .andExpect(status().isNotFound());
     }
 
     @Test
     @DisplayName("소프트 삭제: DB에는 deleted_at · deleted_by가 기록된다")
     void recordsDeletion() throws Exception {
-      String routineId = createRoutine(DEMO_TOKEN);
-      mvc.perform(delete("/api/routines/" + routineId).header(LoginUser.HEADER, DEMO_TOKEN))
+      String routineId = createRoutine(DEMO_USER_ID);
+      mvc.perform(delete("/api/routines/" + routineId).header(LoginUser.HEADER, authorization(DEMO_USER_ID)))
           .andExpect(status().isOk());
       Routine routine = tx.execute(status -> entityManager
           .createQuery("from Routine r where r.publicId = :p", Routine.class)
@@ -553,8 +553,8 @@ class RoutineApiTests extends ApiTestSupport {
     @Test
     @DisplayName("작성자가 아니면 403, 루틴은 남아 있다")
     void forbidden() throws Exception {
-      String routineId = createRoutine(DEMO_TOKEN);
-      mvc.perform(delete("/api/routines/" + routineId).header(LoginUser.HEADER, newUser()))
+      String routineId = createRoutine(DEMO_USER_ID);
+      mvc.perform(delete("/api/routines/" + routineId).header(LoginUser.HEADER, authorization(newUser())))
           .andExpect(status().isForbidden())
           .andExpect(jsonPath("$.code").value("ROUTINE403"));
       mvc.perform(get("/api/routines/" + routineId))
@@ -562,23 +562,23 @@ class RoutineApiTests extends ApiTestSupport {
     }
 
     @Test
-    @DisplayName("없는 루틴 → 404, 잘못된 ID → 400, 헤더 누락 → 400")
+    @DisplayName("없는 루틴 → 404, 잘못된 ID → 400, 세션 헤더 누락 → 401")
     void errors() throws Exception {
-      mvc.perform(delete("/api/routines/" + UNKNOWN_ID).header(LoginUser.HEADER, DEMO_TOKEN))
+      mvc.perform(delete("/api/routines/" + UNKNOWN_ID).header(LoginUser.HEADER, authorization(DEMO_USER_ID)))
           .andExpect(status().isNotFound());
-      mvc.perform(delete("/api/routines/abc").header(LoginUser.HEADER, DEMO_TOKEN))
+      mvc.perform(delete("/api/routines/abc").header(LoginUser.HEADER, authorization(DEMO_USER_ID)))
           .andExpect(status().isBadRequest());
       mvc.perform(delete("/api/routines/" + UNKNOWN_ID))
-          .andExpect(status().isBadRequest());
+          .andExpect(status().isUnauthorized());
     }
   }
 
   /** tx 안에서 쓰기 위한 사용자 생성 (newUser는 자체 트랜잭션을 연다) */
   private String newUserInline() {
-    String token = "device-inline-" + java.util.UUID.randomUUID();
-    entityManager.persist(new User(Ulid.generate(), token, "인라인 유저",
+    String publicId = Ulid.generate();
+    entityManager.persist(new User(publicId, "인라인" + publicId,
         entityManager.createQuery("from Image i where i.publicId = :p", com.example.server.domain.image.entity.Image.class)
             .setParameter("p", DemoData.IMAGE_ID).getSingleResult()));
-    return token;
+    return publicId;
   }
 }
