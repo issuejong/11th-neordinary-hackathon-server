@@ -1,6 +1,6 @@
 # 루틴 서비스 ERD 명세
 
-8개 테이블의 컬럼, 인덱스, 외래 키를 정리했습니다. 컬럼 타입은 MySQL 기준입니다.
+9개 테이블의 컬럼, 인덱스, 외래 키를 정리했습니다. 컬럼 타입은 MySQL 8.4 기준이며, 현재 코드로 빈 데이터베이스에 생성한 실제 스키마와 대조했습니다.
 
 ## 테이블 개요
 
@@ -13,9 +13,10 @@
 | `routine_cards` | 루틴을 구성하는 카드의 내용, 이미지, 시간과 순서를 저장합니다. |
 | `routine_comments` | 루틴에 달린 댓글과 작성·수정·삭제 기록을 저장합니다. |
 | `routine_likes` | 사용자별 루틴 좋아요 상태를 저장합니다. |
-| `routine_participations` | 사용자별 루틴 참여 상태와 참여·완료 시각을 저장합니다. |
+| `routine_participations` | 사용자별 루틴 참여 상태와 참여·완료 시각, 함께하기 초안·결과를 저장합니다. |
+| `routine_ranking_snapshots` | 좋아요순·참여순 목록의 커서용 순서 스냅샷(15분)을 저장합니다. |
 
-`PK`는 기본 키, `FK`는 외래 키, `AI`는 자동 증가를 뜻합니다. `created_by`, `updated_by`, `deleted_by`는 해당 작업을 수행한 사용자의 ID입니다.
+`PK`는 기본 키, `FK`는 외래 키, `AI`는 자동 증가를 뜻합니다. 외래 키의 `RESTRICT`는 MySQL에서 `NO ACTION`으로 표시되며 InnoDB에서는 같은 동작(참조 중인 행 삭제·변경 거부)입니다. `created_by`, `updated_by`, `deleted_by`는 해당 작업을 수행한 사용자의 ID입니다.
 
 ## `users`
 
@@ -26,7 +27,7 @@
 | 컬럼 | 타입 | NULL 허용 | 키 | 기본값 | 의미 |
 | --- | --- | --- | --- | --- | --- |
 | `id` | `BIGINT` | NO | PK, AI | — | 내부 식별자(PK, 외부 노출 금지) |
-| `public_id` | `CHAR(26)` | NO | — | — | 외부 노출용 식별자(ULID) |
+| `public_id` | `VARCHAR(26)` | NO | — | — | 외부 노출용 식별자(ULID) |
 | `nickname` | `VARCHAR(30)` | NO | — | — | 표시 이름. 프로필에서 변경할 때 2~10자를 허용합니다. |
 | `nickname_key` | `VARCHAR(60)` | YES | — | — | 생성하거나 변경한 닉네임의 소문자 값입니다. 동시 요청의 중복을 방지합니다. 기존 데이터는 `NULL`을 유지하고 중복 검사에 `nickname`도 사용합니다. |
 | `bio` | `VARCHAR(100)` | YES | — | — | 마이페이지 한 줄 소개. 프로필 수정 시 최대 50자이며 `null`로 지울 수 있습니다. |
@@ -58,13 +59,30 @@
 
 등록한 테스트 프로필은 기존 `users`에 저장합니다. 이 테이블은 첫 화면에 표시할 슬롯과 현재 점유 세션을 관리합니다.
 
-| 컬럼 | 타입 | NULL 허용 | 키 | 의미 |
-| --- | --- | --- | --- | --- |
-| `id` | `BIGINT` | NO | PK, AI | 내부 식별자 |
-| `slot` | `INT` | NO | UNIQUE | 첫 화면 표시 위치(1~7) |
-| `user_id` | `BIGINT` | NO | FK, UNIQUE | `users.id` |
-| `token_hash` | `VARCHAR(64)` | YES | UNIQUE | 서버가 발급한 점유 세션 토큰의 SHA-256 해시 |
-| `expires_at` | `DATETIME(6)` | YES | — | 현재 점유 세션의 만료 시각(UTC) |
+### 컬럼
+
+| 컬럼 | 타입 | NULL 허용 | 키 | 기본값 | 의미 |
+| --- | --- | --- | --- | --- | --- |
+| `id` | `BIGINT` | NO | PK, AI | — | 내부 식별자 |
+| `slot` | `INT` | NO | — | — | 첫 화면 표시 위치(1~7) |
+| `user_id` | `BIGINT` | NO | FK | — | 테스트 계정 사용자 `users.id` |
+| `token_hash` | `VARCHAR(64)` | YES | — | — | 서버가 발급한 점유 세션 토큰의 SHA-256 해시(원문은 저장하지 않음) |
+| `expires_at` | `DATETIME(6)` | YES | — | — | 현재 점유 세션의 만료 시각 |
+
+### 키 및 인덱스
+
+| 이름 | 컬럼 | 종류 |
+| --- | --- | --- |
+| `uk_test_account_leases_slot` | `slot` | UNIQUE |
+| `uk_test_account_leases_user_id` | `user_id` | UNIQUE |
+| `uk_test_account_leases_token_hash` | `token_hash` | UNIQUE |
+| `pk_test_account_leases` | `id` | PRIMARY KEY |
+
+### 외래 키
+
+| 컬럼 | 참조 컬럼 | ON DELETE | ON UPDATE |
+| --- | --- | --- | --- |
+| `user_id` | `users.id` | `RESTRICT` | `RESTRICT` |
 
 기존 MySQL에 `users.device_token` 컬럼이 필수로 남아 있으면 서버 시작 시 NULL을 허용하도록 변경합니다. 기존 데이터는 보존하며 신규 사용자 식별에는 점유 세션을 사용합니다.
 
@@ -77,7 +95,7 @@
 | 컬럼 | 타입 | NULL 허용 | 키 | 기본값 | 의미 |
 | --- | --- | --- | --- | --- | --- |
 | `id` | `BIGINT` | NO | PK, AI | — | 내부 식별자(PK) |
-| `public_id` | `CHAR(26)` | NO | — | — | 외부 노출용 식별자(ULID, 이미지 조회 URL에 사용) |
+| `public_id` | `VARCHAR(26)` | NO | — | — | 외부 노출용 식별자(ULID, 이미지 조회 URL에 사용) |
 | `content_type` | `VARCHAR(50)` | NO | — | — | MIME 타입(예: image/png) |
 | `byte_size` | `INT UNSIGNED` | NO | — | — | 파일 크기(byte) |
 | `data` | `MEDIUMBLOB` | NO | — | — | 이미지 바이너리입니다. 해커톤 MVP에서는 DB에 저장합니다. |
@@ -106,7 +124,7 @@
 | 컬럼 | 타입 | NULL 허용 | 키 | 기본값 | 의미 |
 | --- | --- | --- | --- | --- | --- |
 | `id` | `BIGINT` | NO | PK, AI | — | 내부 식별자(PK) |
-| `public_id` | `CHAR(26)` | NO | — | — | 외부 노출용 식별자(ULID) |
+| `public_id` | `VARCHAR(26)` | NO | — | — | 외부 노출용 식별자(ULID) |
 | `user_id` | `BIGINT` | NO | FK | — | 소유자 users.id |
 | `title` | `VARCHAR(30)` | NO | — | — | 루틴 제목 5~30자(필수) |
 | `content` | `VARCHAR(500)` | YES | — | — | 루틴 소개 최대 500자(선택) |
@@ -140,7 +158,7 @@
 | 컬럼 | 타입 | NULL 허용 | 키 | 기본값 | 의미 |
 | --- | --- | --- | --- | --- | --- |
 | `id` | `BIGINT` | NO | PK, AI | — | 내부 식별자(PK) |
-| `public_id` | `CHAR(26)` | NO | — | — | 외부 노출용 식별자(ULID) |
+| `public_id` | `VARCHAR(26)` | NO | — | — | 외부 노출용 식별자(ULID) |
 | `routine_id` | `BIGINT` | NO | FK | — | 루틴 routines.id |
 | `sort_order` | `TINYINT UNSIGNED` | NO | — | — | 카드 생성 순서입니다. 허용 범위는 1~10입니다. |
 | `image_id` | `BIGINT` | NO | FK | — | 카드 이미지 images.id(필수) |
@@ -178,7 +196,7 @@
 | 컬럼 | 타입 | NULL 허용 | 키 | 기본값 | 의미 |
 | --- | --- | --- | --- | --- | --- |
 | `id` | `BIGINT` | NO | PK, AI | — | 내부 식별자(PK, 작성순 정렬 기준) |
-| `public_id` | `CHAR(26)` | NO | — | — | 외부 노출용 식별자(ULID) |
+| `public_id` | `VARCHAR(26)` | NO | — | — | 외부 노출용 식별자(ULID) |
 | `routine_id` | `BIGINT` | NO | FK | — | 루틴 routines.id |
 | `user_id` | `BIGINT` | NO | FK | — | 작성자 users.id |
 | `content` | `VARCHAR(50)` | NO | — | — | 댓글 내용 1~50자 |
@@ -277,7 +295,29 @@
 | `routine_id` | `routines.id` | `RESTRICT` | `RESTRICT` |
 | `user_id` | `users.id` | `RESTRICT` | `RESTRICT` |
 
-## 구현 전 확인 사항
+## `routine_ranking_snapshots`
+
+좋아요순(`likes`) · 참여순(`participants`) 목록의 첫 페이지를 조회할 때 그 시점의 루틴 순서를 저장합니다. 다음 페이지 커서는 이 스냅샷을 가리키므로, 스크롤하는 동안 좋아요 · 참여 수가 바뀌어도 중복 · 누락 없이 이어서 조회합니다. 만료(15분)된 스냅샷은 `expires_at` 인덱스로 정리합니다. 다른 테이블과 외래 키로 연결하지 않습니다.
+
+### 컬럼
+
+| 컬럼 | 타입 | NULL 허용 | 키 | 기본값 | 의미 |
+| --- | --- | --- | --- | --- | --- |
+| `public_id` | `VARCHAR(26)` | NO | PK | — | 스냅샷 식별자(ULID, 커서에 담김) |
+| `sort` | `ENUM('LATEST','LIKES','PARTICIPANTS')` | NO | — | — | 정렬 종류 |
+| `author_id` | `VARCHAR(26)` | YES | — | — | 작성자 필터(`users.public_id`, 프로필 내 루틴 탭) |
+| `participant_id` | `VARCHAR(26)` | YES | — | — | 참여자 필터(`users.public_id`, 프로필 참여 루틴 탭) |
+| `ordered_ids` | `LONGTEXT` | NO | — | — | 정렬된 루틴 `public_id` 목록 |
+| `expires_at` | `DATETIME(6)` | NO | — | — | 스냅샷 만료 시각(생성 + 15분) |
+
+### 키 및 인덱스
+
+| 이름 | 컬럼 | 종류 |
+| --- | --- | --- |
+| `pk_routine_ranking_snapshots` | `public_id` | PRIMARY KEY |
+| `idx_ranking_expiry` | `expires_at` | INDEX |
+
+## 구현 참고 사항
 
 - **카드 10장 제한**은 API 검증(1~10개)과 DB의 `UNIQUE (routine_id, sort_order)` + `CHECK (sort_order BETWEEN 1 AND 10)`(`chk_cards_sort_order`)로 이중으로 보장합니다.
 - **이미지 업로드**는 API에서 형식(jpg, png, heic, heif, webp, gif, 파일 시그니처로 판별), 용량(파일 10MB, 요청 20MB), 해상도(가로 · 세로 최대 8192px)를 검증합니다. `content_type`에는 판별된 실제 형식이 저장됩니다. `MEDIUMBLOB`의 저장 한도는 16 MiB보다 1바이트 작습니다.
