@@ -50,4 +50,14 @@ public class Routine extends SoftDeletableEntity {
     this.title = title;
     this.content = content;
   }
+
+  public void update(String title, String content, Long actorId) {
+    this.title = title;
+    this.content = content;
+    recordUpdate(actorId);
+  }
+
+  public boolean isOwnedBy(Long userId) {
+    return user.getId().equals(userId);
+  }
 }

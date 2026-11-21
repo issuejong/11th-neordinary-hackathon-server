@@ -7,6 +7,7 @@ import jakarta.validation.ConstraintViolationException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
@@ -92,6 +93,13 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
   public ResponseEntity<ApiResponse<Void>> handleUnsupportedMediaType() {
     return failure(ErrorStatus._UNSUPPORTED_MEDIA_TYPE);
+  }
+
+  /** 유니크 키 충돌 등 (동시 요청으로 같은 기기 토큰이 두 번 가입되는 경우 등) */
+  @ExceptionHandler(DataIntegrityViolationException.class)
+  public ResponseEntity<ApiResponse<Void>> handleConflict(DataIntegrityViolationException exception) {
+    log.warn("Data integrity violation: {}", exception.getMostSpecificCause().getMessage());
+    return failure(ErrorStatus._CONFLICT);
   }
 
   /** 위에서 처리하지 못한 모든 예외. 원인은 로그로만 남긴다. */

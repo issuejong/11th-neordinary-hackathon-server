@@ -16,8 +16,8 @@ server:
   # Cloud Run 앞단 프록시의 X-Forwarded-* 헤더를 신뢰 (Swagger 등에서 https URL 생성)
   forward-headers-strategy: framework
   tomcat:
-    # 한도를 넘는 업로드도 끝까지 읽은 뒤 400(FILE400) JSON으로 응답 (기본값이면 연결이 끊김)
-    max-swallow-size: -1
+    # 한도를 넘는 업로드도 끝까지 읽은 뒤 400(FILE400) JSON으로 응답 (기본 2MB면 연결이 끊김)
+    max-swallow-size: 32MB # Cloud Run 요청 한도(32MB)와 동일하게 상한 고정
 
 ---
 # 로컬 개발 프로필 (기본값): docker compose up -d 로 띄운 로컬 MySQL 사용

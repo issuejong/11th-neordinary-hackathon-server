@@ -38,6 +38,21 @@ com.example.server
 ```
 새 API는 `domain/example`을 그대로 따라 만드세요.
 
+## 구현된 API (Swagger 예시값으로 바로 실행 가능)
+| 메서드 | 경로 | 설명 | 인증 헤더 |
+| --- | --- | --- | --- |
+| POST | `/api/v1/images` | 이미지 업로드 (multipart `file`, jpeg/png/heic/heif/webp/gif, 10MB) → 201 | O |
+| GET | `/api/v1/images/{imageId}` | 이미지 바이너리 조회 | — |
+| POST | `/api/v1/routines` | 루틴 생성 (카드 1~10장) → 201 | O |
+| GET | `/api/v1/routines/{routineId}` | 루틴 상세 (작성자, 카드, 좋아요·댓글 수) | — |
+| PUT | `/api/v1/routines/{routineId}` | 루틴 수정 (카드 전체 교체), 작성자만 | O |
+| DELETE | `/api/v1/routines/{routineId}` | 루틴 소프트 삭제, 작성자만 | O |
+
+- **임시 인증**: 컨트롤러는 `@LoginUser Long userId`로 사용자를 받고, 지금은 `X-User-Id` 헤더(users.public_id)로 해석합니다(`global/auth/LoginUserArgumentResolver`). 유저 도메인(가입/로그인)이 완성되면 **리졸버만 교체**하고 컨트롤러는 그대로 둡니다. Swagger에는 헤더 입력칸이 자동으로 추가됩니다.
+- **데모 데이터**: `global/init/DemoDataInitializer`가 시작할 때 기본 이미지 3개, 데모 유저, 루틴 2개를 고정 publicId(`DemoData`)로 넣습니다(이미 있으면 건너뜀). Swagger 예시값이 이 ID를 가리키므로 지우거나 바꾸지 마세요.
+- ID는 `global/util/Ulid.generate()`로 만들고, 경로 변수는 `@Pattern(regexp = Ulid.REGEX)`로 검증합니다(형식 오류는 400).
+- 목록·상세 조회에서 이미지 바이너리(MEDIUMBLOB)를 읽지 않도록 projection(`select new ...View(...)`)으로 조회합니다.
+
 ## 코드 규칙
 - **응답**: 모든 API는 `ApiResponse<T>`로 감쌉니다. 성공은 `ApiResponse.onSuccess(result)`, 생성은 `ResponseEntity.created(...)` + `ApiResponse.of(SuccessStatus._CREATED, result)`.
 - **에러**: `throw new BusinessException(ErrorStatus.XXX)`. 새 에러는 `ErrorStatus` enum에 `HttpStatus`, 코드(`DOMAIN4xx`), 한국어 메시지로 추가합니다.
