@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Routine Participation", description = "루틴 참여 시작 · 취소 · 완료")
+@Tag(name = "Routine Participation")
 @RestController
 @RequestMapping("/api/routines/{routineId}/participation")
 @RequiredArgsConstructor

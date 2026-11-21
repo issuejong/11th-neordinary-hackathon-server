@@ -50,11 +50,14 @@ public class SwaggerConfig {
             .version("v1")
             .description(guide()))
         .tags(List.of(
-            new Tag().name("Test Account").description("고정 테스트 계정 선택"),
-            new Tag().name("User").description("내 프로필"),
+            new Tag().name("Test Account").description("① 심사 시작: 8번 데모 유저 claim → Authorize"),
+            new Tag().name("User").description("프로필 조회 · 수정"),
             new Tag().name("Image").description("이미지 업로드(DB 저장) · 조회"),
             new Tag().name("Routine").description("루틴 목록 · 생성 · 상세 · 수정 · 삭제"),
-            new Tag().name("Routine Comment").description("루틴 댓글"),
+            new Tag().name("Routine Like").description("좋아요 설정 · 취소"),
+            new Tag().name("Routine Comment").description("댓글 목록 · 작성 · 수정 · 삭제"),
+            new Tag().name("Routine Participation").description("함께하기 참여 · 초안 · 완료"),
+            new Tag().name("Routine Participation Results").description("함께한 결과 목록 · 상세 · 수정 · 삭제"),
             new Tag().name("Health").description("서버 상태 확인")))
         .components(new Components().addSchemas(ERROR_SCHEMA, errorSchema())
             .addSecuritySchemes(TEST_ACCOUNT_SESSION, new SecurityScheme().type(SecurityScheme.Type.HTTP)
@@ -64,47 +67,36 @@ public class SwaggerConfig {
   /** 문서 상단 안내: 프론트가 처음 읽을 사용법 + 에러 코드 전체 목록(ErrorStatus에서 자동 생성) */
   private static String guide() {
     String errorRows = Arrays.stream(ErrorStatus.values())
-        .map(e -> "| " + e.getHttpStatus().value() + " | `" + e.getCode() + "` | " + e.getMessage() + " |")
-        .collect(Collectors.joining("\n"));
+        .map(e -> "<tr><td>" + e.getHttpStatus().value() + "</td><td><code>" + e.getCode() + "</code></td><td>"
+            + e.getMessage() + "</td></tr>")
+        .collect(Collectors.joining());
     return """
-        ### 공통
-        - 모든 JSON 응답: `{ "isSuccess": boolean, "code": string, "message": string, "result": ... }`
-          - 성공: `isSuccess=true`, `code=COMMON200`(조회 · 수정 · 삭제) / `COMMON201`(생성)
-          - 실패: `isSuccess=false`, `code`로 분기하세요. 입력값 오류(400)는 `result`에 **필드별 오류 메시지**가 담깁니다.
-            예) `"result": { "title": "루틴 제목은 5자 이상 30자 이하여야 합니다.", "cards[0].time": "시간은 필수입니다." }`
-        - ID는 모두 **publicId(ULID 26자, 예: `01KB0000000000000000RTN001`)** 입니다.
-        - 시각(`createdAt` 등)은 **KST(Asia/Seoul)** 기준 `yyyy-MM-dd'T'HH:mm:ss.SSSSSS` (시간대 표기 없음), 스텝 시간은 `HH:mm`.
+        > **심사용 빠른 시작**
+        > 1. **Test Account** › `POST /claim` 을 예시값(8번 · 데모 유저) 그대로 실행
+        > 2. 응답의 `accessToken` 을 오른쪽 위 **Authorize** 에 붙여넣기
+        > 3. 이후 모든 API를 **예시값 그대로** 실행 — 예시 데이터는 10초마다 자동 복구됩니다
 
-        ### ✅ 심사용: Swagger 예시 바로 실행하기
-        1. `POST /api/test-accounts/{publicId}/claim` 을 **예시값(8번 심사용 계정 `데모 유저`) 그대로** Execute
-        2. 응답의 `result.accessToken` 을 복사해 오른쪽 위 **Authorize** 에 붙여넣기
-        3. 이후 모든 API를 **예시값 그대로** Execute 하면 성공합니다. (수정 · 삭제 · 함께하기 예시 데이터는 데모 유저 소유이며 10초마다 자동 복구)
+        ### 응답 형식
+        모든 응답은 `isSuccess` · `code` · `message` · `result` 로 구성됩니다.
+        성공은 `COMMON200`(조회 · 수정 · 삭제) / `COMMON201`(생성), 실패는 `code` 로 구분합니다.
+        입력값 오류(400)는 `result` 에 필드별 메시지가 담깁니다. 예: `"cards[0].time": "시간은 필수입니다."`
 
-        ### 사용자 식별 (데모)
-        - `GET /api/test-accounts`에서 등록된 계정을 확인하고, 사용 가능한 계정의 `publicId`로 `POST /api/test-accounts/{publicId}/claim`을 호출합니다.
-        - 응답의 `accessToken`을 Swagger의 Authorize에 입력하거나 `Authorization: Bearer <accessToken>`으로 보냅니다.
-        - 앱은 사용 중인 계정의 heartbeat를 30초마다 호출하고, 계정 선택 화면으로 돌아가면 사용권을 해제합니다.
-        - 댓글 목록은 사용권 없이도 조회할 수 있습니다. 사용권을 보내면 내 댓글에 `isMine: true`가 표시됩니다.
+        ### 규칙
+        - **ID** — 외부에 노출되는 ID는 모두 publicId (ULID 26자)
+        - **시각** — KST 기준 `yyyy-MM-dd'T'HH:mm:ss`, 스텝 시간은 `HH:mm`
+        - **인증** — `Authorization: Bearer <accessToken>` (테스트 계정 claim으로 발급)
 
-        ### 루틴 만들기 흐름
-        1. `POST /api/images` (multipart `file`) → `result.imageId`
-        2. `POST /api/routines` 의 `cards[].imageId` 에 넣어 생성 (스텝 1~10개, 배열 순서 = 스텝 순서)
-        3. 화면에는 응답의 `imageUrl` / `thumbnailUrl` 을 그대로 쓰면 됩니다.
+        ### 주요 흐름
+        - **루틴 만들기** — 이미지 업로드 → 받은 `imageId` 를 `cards[].imageId` 에 넣어 생성 (스텝 1~10개)
+        - **목록** — `sort=latest | likes | participants`, 다음 페이지는 응답의 `nextCursor` 를 `cursor` 로 전달
+        - **프로필** — 내 루틴 `authorId=<publicId>`, 참여 루틴 `participantId=<publicId>`
 
-        ### 목록 (커서 페이지네이션)
-        - `GET /api/routines?sort=latest|likes|participants&size=20` → `result.nextCursor`
-        - 다음 페이지: 같은 `sort`로 `&cursor=<nextCursor>`. `hasNext=false`면 끝 (`nextCursor=null`)
-        - 마이페이지 내 루틴: `&authorId=<내 publicId>` 추가 (응답 모양 동일)
-
-        ### 데모 데이터
-        Swagger 예시용 루틴 · 댓글 · 함께하기 데이터는 삭제 예시를 실행해도 **10초 안에 자동 복구**됩니다.
-
-        ### 에러 코드 전체
-        | HTTP | code | message |
-        | --- | --- | --- |
-        %s
+        <details><summary><b>에러 코드 전체 보기</b></summary>
+        <table><thead><tr><th>HTTP</th><th>code</th><th>message</th></tr></thead><tbody>%s</tbody></table>
+        </details>
         """.formatted(errorRows);
   }
+
 
   private static Schema<?> errorSchema() {
     return new ObjectSchema()
@@ -150,9 +142,8 @@ public class SwaggerConfig {
   /** 로그인이 필요한 API 설명 맨 앞에 사용권 발급 → Authorize 순서를 붙인다 (예시 실행 시 401 방지) */
   private static void addLoginGuide(Operation operation, boolean required) {
     String guide = required
-        ? "🔒 **로그인 필요** — 먼저 `POST /api/test-accounts/{publicId}/claim`을 예시값(8번 심사용 데모 유저) 그대로 실행해 "
-            + "`accessToken`을 받고, 오른쪽 위 **Authorize**에 입력한 뒤 실행하세요. 없으면 `401 TEST401`.\n\n"
-        : "🔓 로그인 선택 — Authorize에 `accessToken`을 넣으면 내 상태(`isMine` 등)가 함께 표시됩니다.\n\n";
+        ? "🔒 **로그인 필요** · Test Account › `POST /claim` 으로 받은 토큰을 Authorize에 입력 (없으면 401)\n\n"
+        : "🔓 로그인 선택 · 토큰을 넣으면 내 상태(`isMine` 등)가 함께 표시됩니다\n\n";
     String description = operation.getDescription();
     operation.setDescription(description == null || description.isBlank() ? guide.strip() : guide + description);
   }
